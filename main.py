@@ -91,6 +91,10 @@ def webex_webhook():
 
     return "", 200
 
+@app.route("/geoloc", methods=["GET"])
+def geoloc():
+    # store their location temporarily in the session as 'city_clientid' in a database known as cities
+    return flask.render_template("geoloc.html")
 
 if __name__ == "__main__":
     app.run(port=5000)
