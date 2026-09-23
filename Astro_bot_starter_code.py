@@ -37,12 +37,13 @@ def get_api_key(prompt, hardcoded_key):
 # =========================
 def get_rooms(token):
     url = "https://webexapis.com/v1/rooms"
-    headers = "Authorization: Bearer MWU5OWVmNGMtZGZlYS00YWMyLThlN2YtMDJiN2YwMDNlMDEyOWIyOTI3NTAtMGIy_PE93_c18e13ae-5575-4bc0-ae01-e48905f14f17, Accept: application/json"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json"
+    }
     response = requests.get(
             url,
-        params={
-            headers
-        },
+        headers=headers,
         timeout=10,
     )
 
@@ -55,25 +56,27 @@ def get_rooms(token):
 
 def print_rooms(rooms):
     for room in rooms:
-        print(#complete the print statement to display the room title and id)
+        print(f"Room: {room['title']}, ID: {room['id']}")
 
 
 def select_room(rooms):
     while True:
-        name = input(#complete the input prompt to ask the user for the room name)
+        name = input("Enter the room name: ")
         for room in rooms:
             if name.lower() in room["title"].lower():
-                print(#complete the print statement to confirm the selected room)
+                print(f"Selected room: {room['title']}")
                 return room["id"]
-        print(#complete the print statement to indicate that the room was not found)
+        print("Room not found. Please try again.")
 
 
 def get_latest_message(token, room_id):
-    url = #complete the URL to fetch messages from Webex API
-    params = {"roomId":#complete, "max": #complete}
-    headers = #complete the headers dictionary to include the Authorization header with the token
-
-    response = requests.#complete(#complete, headers=headers, params=params)
+    url = "https://webexapis.com/v1/messages"
+    params = {"roomId":{room_id}, "max": 100}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json"
+    }
+    response = requests.get(url, headers=headers, params=params)
 
     if response.status_code != 200:
         return None, None
@@ -86,15 +89,21 @@ def get_latest_message(token, room_id):
     latest = data[0]
     return latest.get("id"), latest.get("text", "")
 
-
 def send_message(token, room_id, message):
-    url = #complete the URL to send messages to Webex API
-    headers = #complete the headers dictionary to include the Authorization header with the token and Content-Type as application/json
+    url = "https://webexapis.com/v1/messages"
+    headers = {
+        "Authorization": "Bearer MWU5OWVmNGMtZGZlYS00YWMyLThlN2YtMDJiN2YwMDNlMDEyOWIyOTI3NTAtMGIy_PE93_c18e13ae-5575-4bc0-ae01-e48905f14f17",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
     data = {
         "roomId": room_id,
         "text": message
     }
-    requests.#complete(url, headers=headers, data=json.dumps(data))
+    response = requests.request('POST', url, headers=headers, data = JSON.dumps(data))
+
+    if response.status_code != 200:
+        print("Error sending message:", response.status_code, response.text)
 
 # =========================
 # WEATHER FUNCTIONS
