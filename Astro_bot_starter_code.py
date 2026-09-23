@@ -13,37 +13,47 @@ import json
 import time
 from time import datetime
 import os # import os module to access environment variables
+
+global use_hardcoded_key
+use_hardcoded_key = False # Default to use False (During Testing True)
+api_keys_used_name = ("weather_api", "webex_api", "ISS_api", "Geocoding_api")
+api_keys_hardcoded = {
+    "weather_api": "provide_key",
+    "webex_api": "provide_key",
+    "ISS_api": "provide_key",
+    "Geocoding_api": "provide_key"
+}
 # =========================
 # CONFIGURATION FUNCTIONS
 # =========================
+#if system defined keys exist use those else if harcoded keys exist in the python file exist use those else use user provided keys 
 
-def get_environment_keys():
-    # Load environment variables from .env file
-    env_vars = {} 
-    if not os.path.exists('.env'):
-        print("Error: .env file not found. Please create a .env file with the required API keys.")
-        return env_vars
-    with open('.env') as f:
-        for line in f:
-            key, value = line.strip().split('=', 1)
-            env_vars[key] = value
-    return env_vars
+def get_environment_variable_key(key_name):
+    env_var_name = f"{key_name}_key"
+    api_key = os.environ.get(env_var_name)
+    return api_key
 
+def get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
+    api_keys = {}
+    for key_name in api_keys_used:
+        env_var_name = f"{key_name}_key"
+        api_key = os.getenv(env_var_name)
+        if not api_key:
+            print(f"Error: {env_var_name} not found in environment variables. using hardcoded key instead.")
+            if use_hardcoded_key:
+                api_key = api_keys_hardcoded.get(key_name)
+            else:
+                api_key = str(input(f"Provide API Key for api: {key_name}: "))
+        api_keys[key_name] = api_key
+    return api_keys # api_keys is a dictionary containing api_keys, example: {"weather_api": "your_weather_api_key", "webex_api": "your_webex_api_key", ...}
 
-def get_webex_token():
-    choice = input("Use hard-coded Webex token? (y/n): ").lower()
-    if choice == "n":
-        token = input("Enter your Webex Access Token: ")
-        return f"Bearer {token}"
-    else:
-        return "Bearer NWZmMWJhZDUtMWVjYi00Mzg2LWJlYzMtNWQ1ZGUxZmE1Yjc4YmIwMTY1NTctNWI2_PE93_c18e13ae-5575-4bc0-ae01-e48905f14f17"
-def get_api_key(prompt, hardcoded_key):
-    choice = input(f"{prompt}(y/n): ").lower()
-    if choice == "n":
-        token = input("Enter your API Access Token: ")
-        return token
-    else:
-        return hardcoded_key
+#def get_webex_token():
+#    choice = input("Use hard-coded Webex token? (y/n): ").lower()
+#    if choice == "n":
+#        token = input("Enter your Webex Access Token: ")
+#        return f"Bearer {token}"
+#    else:
+#        return "Bearer NWZmMWJhZDUtMWVjYi00Mzg2LWJlYzMtNWQ1ZGUxZmE1Yjc4YmIwMTY1NTctNWI2_PE93_c18e13ae-5575-4bc0-ae01-e48905f14f17"
 
 # =========================
 # WEBEX FUNCTIONS
@@ -105,7 +115,7 @@ def get_latest_message(token, room_id):
 def send_message(token, room_id, message):
     url = "https://webexapis.com/v1/messages"
     headers = {
-        "Authorization": "Bearer MWU5OWVmNGMtZGZlYS00YWMyLThlN2YtMDJiN2YwMDNlMDEyOWIyOTI3NTAtMGIy_PE93_c18e13ae-5575-4bc0-ae01-e48905f14f17",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
         "Accept": "application/json"
     }
@@ -200,14 +210,14 @@ def get_iss_location(api_key):
 # =========================
 # MAIN BOT LOGIC
 # =========================
-def main():
+def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
+    
+    api_keys = get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
+                  
 
     token = get_webex_token()
 
-    weather_key = get_api_key(
-        "Weather API key",
-        "YOUR_OPENWEATHER_API_KEY"
-    )
+    weather_key = api_keys.get("weather_api")
 
     rooms = get_rooms(token)
 
