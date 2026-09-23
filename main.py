@@ -97,8 +97,8 @@ def geoloc():
     return flask.render_template("geoloc.html")
 
 if __name__ == "__main__":
-    app.run(port=5000)
-    print("Flask app running on port 5000")
+    app.run(port=8080)
+    print("Flask app running on port 8080")
     print("Webhook endpoint available at /webex")
     print("Global room ID is set to:", Glbl_roomId)
     print("Ready to receive Webex messages.")

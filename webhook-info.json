@@ -1,0 +1,13 @@
+{
+    "id": "Y2lzY29zcGFyazovL3VybjpURUFNOmV1LWNlbnRyYWwtMV9rL1dFQkhPT0svMjNlNzVlNGYtYWFhMS00Mjg3LWFiMjQtZDFkMmM5NzE2YTZj",
+    "name": "V2 WEBHOOK",
+    "targetUrl": "https://busybody-refreeze-grill.ngrok-free.dev",
+    "resource": "messages",
+    "event": "created",
+    "orgId": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi9jMThlMTNhZS01NTc1LTRiYzAtYWUwMS1lNDg5MDVmMTRmMTc",
+    "createdBy": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9jYzI2Zjg1Ny0zYjI1LTQ1YjktYTM4OC0xNGEzNjgxODJiMDY",
+    "appId": "Y2lzY29zcGFyazovL3VzL0FQUExJQ0FUSU9OL0NmMzkyNWU5NDFmMzhhYTc0M2Y0MmFiNzcwZmZhZjFhNTIyMjcxZDI5OTQ4NDhjNjk2YWMwYTEwN2Q2YTg5MjI3",
+    "ownedBy": "creator",
+    "status": "active",
+    "created": "2026-09-23T08:50:44.068Z"
+}
