@@ -12,10 +12,24 @@ import requests
 import json
 import time
 from time import datetime
-
+import os # import os module to access environment variables
 # =========================
 # CONFIGURATION FUNCTIONS
 # =========================
+
+def get_environment_keys():
+    # Load environment variables from .env file
+    env_vars = {} 
+    if not os.path.exists('.env'):
+        print("Error: .env file not found. Please create a .env file with the required API keys.")
+        return env_vars
+    with open('.env') as f:
+        for line in f:
+            key, value = line.strip().split('=', 1)
+            env_vars[key] = value
+    return env_vars
+
+
 def get_webex_token():
     choice = input("Use hard-coded Webex token? (y/n): ").lower()
     if choice == "n":
@@ -23,7 +37,6 @@ def get_webex_token():
         return f"Bearer {token}"
     else:
         return "Bearer NWZmMWJhZDUtMWVjYi00Mzg2LWJlYzMtNWQ1ZGUxZmE1Yjc4YmIwMTY1NTctNWI2_PE93_c18e13ae-5575-4bc0-ae01-e48905f14f17"
-
 def get_api_key(prompt, hardcoded_key):
     choice = input(f"{prompt}(y/n): ").lower()
     if choice == "n":
@@ -108,9 +121,13 @@ def send_message(token, room_id, message):
 # =========================
 # WEATHER FUNCTIONS
 # =========================
-def get_city_coordinates(city, api_key):
-    url = #complete the URL to fetch city coordinates from OpenWeatherMap API
-    params = #complete the params dictionary to include the city name, limit, and the API key
+def get_city_coordinates(city):
+    if .env.get("weather_key"):
+        api_key = .env["weather_key"]
+    else:
+
+    url = "http://api.openweathermap.org/geo/1.0/direct"
+    params = {"city":{city}, "appid": api_key} # ba053c217ab4c1ca46d95ff4d76c0a8c
     response = requests.#complete(url, params=params)
 
     if response.status_code != 200:
