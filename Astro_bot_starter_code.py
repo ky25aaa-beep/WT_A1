@@ -43,14 +43,6 @@ def get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
         api_keys[key_name] = api_key
     return api_keys # api_keys is a dictionary containing api_keys, example: {"weather_api": "your_weather_api_key", "webex_api": "your_webex_api_key", ...}
 
-#def get_webex_token():
-#    choice = input("Use hard-coded Webex token? (y/n): ").lower()
-#    if choice == "n":
-#        token = input("Enter your Webex Access Token: ")
-#        return f"Bearer {token}"
-#    else:
-#        return "Bearer NWZmMWJhZDUtMWVjYi00Mzg2LWJlYzMtNWQ1ZGUxZmE1Yjc4YmIwMTY1NTctNWI2_PE93_c18e13ae-5575-4bc0-ae01-e48905f14f17"
-
 # =========================
 # WEBEX FUNCTIONS
 # =========================
@@ -119,7 +111,7 @@ def send_message(token, room_id, message):
         "roomId": room_id,
         "text": message
     }
-    response = requests.request('POST', url, headers=headers, data = JSON.dumps(data))
+    response = requests.request('POST', url, headers=headers, data = json.dumps(data))
 
     if response.status_code != 200:
         print("Error sending message:", response.status_code, response.text)
@@ -129,8 +121,9 @@ def send_message(token, room_id, message):
 # =========================
 def get_city_coordinates(city, api_key):
     url = "http://api.openweathermap.org/geo/1.0/direct"
-    params = {"city":{city}, "appid": api_key} 
-    response = requests.request('GET', url, parameters=params,)
+    params = {"q":{city}, "appid": api_key} 
+    response = requests.request('GET', url, params=params)
+    print(response)
 
 
     if response.status_code != 200:
@@ -216,10 +209,7 @@ def get_iss_location(api_key):
 def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     
     api_keys = get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
-                  
-
-    #token = get_webex_token()
-
+                
     weather_key = api_keys.get("weather_api")
     token = api_keys.get("webex_api")
     rooms = get_rooms(token)
@@ -232,6 +222,7 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     room_id = select_room(rooms)
 
     last_message_id, _ = get_latest_message(token, room_id)
+    print(last_message_id)
 
     while True:
 
@@ -273,7 +264,8 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
             else:
                 send_message(token, room_id, "Unknown command. Use /help")
 
-        time.sleep(5)
+        time.sleep(2)
 
-print(os.getenv("weather_api_key"))
+
+
 main(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
