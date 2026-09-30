@@ -82,7 +82,7 @@ def select_room(rooms):
 
 def get_latest_message(token, room_id):
     url = "https://webexapis.com/v1/messages"
-    params = {"roomId":{room_id}, "max": 100}
+    params = {"roomId":{room_id}, "max": 100, "mentionedPeople": "me"} # add  "mentionedPeople": "me" to get spaces recieving to work but cannot send
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/json"
@@ -100,7 +100,7 @@ def get_latest_message(token, room_id):
     latest = data[0]
     return latest.get("id"), latest.get("text", "")
 
-def send_message(token, room_id, message):
+def send_message(token, room_id, message, parent_id):
     url = "https://webexapis.com/v1/messages"
     headers = {
         "Authorization": f"Bearer {token}",
@@ -109,10 +109,11 @@ def send_message(token, room_id, message):
     }
     data = {
         "roomId": room_id,
-        "text": message
+        "text": message,
+        "parentId": parent_id
     }
     response = requests.request('POST', url, headers=headers, data = json.dumps(data))
-
+    print(response.status_code, response.text)
     if response.status_code != 200:
         print("Error sending message:", response.status_code, response.text)
 
@@ -222,7 +223,6 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     room_id = select_room(rooms)
 
     last_message_id, _ = get_latest_message(token, room_id)
-    print(last_message_id)
 
     while True:
 
@@ -233,7 +233,8 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
             last_message_id = message_id
 
             print(f"Received message: {message_text}")
-
+            if message_text.startswith("WT-Lvl5-Assignment1-KY"):
+                message_text = message_text[len("WT-Lvl5-Assignment1-KY"):].strip()
             if not message_text.startswith("/"):
                 continue
 
@@ -241,7 +242,9 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                 send_message(
                     token,
                     room_id,
-                    "/weather <city>\n/iss\n/help\n/quit"
+                    "/weather <city>\n/iss\n/help\n/quit",#
+                    parent_id=last_message_id
+
                 )
 
             elif message_text.lower().startswith("/weather"):
@@ -249,20 +252,20 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                 parts = message_text.split(maxsplit=1)
 
                 if len(parts) < 2:
-                    send_message(token, room_id, "Usage: /weather <city>")
+                    send_message(token, room_id, "Usage: /weather <city>", parent_id=last_message_id)
                 else:
                     city = parts[1]
-                    send_message(token, room_id, get_weather(city, weather_key))
+                    send_message(token, room_id, get_weather(city, weather_key), parent_id=last_message_id)
 
             elif message_text.lower() == "/iss":
-                send_message(token, room_id, get_iss_location(weather_key))
+                send_message(token, room_id, get_iss_location(weather_key), parent_id=last_message_id)
 
             elif message_text.lower() == "/quit":
-                send_message(token, room_id, "AstroBot shutting down.")
+                send_message(token, room_id, "AstroBot shutting down.", parent_id=last_message_id)
                 break
 
             else:
-                send_message(token, room_id, "Unknown command. Use /help")
+                send_message(token, room_id, "Unknown command. Use /help", parent_id=last_message_id)
 
         time.sleep(2)
 
