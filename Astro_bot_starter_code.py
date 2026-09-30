@@ -131,14 +131,11 @@ def send_message(token, room_id, message):
 # =========================
 # WEATHER FUNCTIONS
 # =========================
-def get_city_coordinates(city):
-    if .env.get("weather_key"):
-        api_key = .env["weather_key"]
-    else:
-
+def get_city_coordinates(city, api_key):
     url = "http://api.openweathermap.org/geo/1.0/direct"
-    params = {"city":{city}, "appid": api_key} # ba053c217ab4c1ca46d95ff4d76c0a8c
-    response = requests.#complete(url, params=params)
+    params = {"city":{city}, "appid": api_key} 
+    response = requests.request('GET', url, parameters=params,)
+
 
     if response.status_code != 200:
         return None
@@ -151,30 +148,40 @@ def get_weather(city, api_key):
     location = get_city_coordinates(city, api_key)
 
     if not location:
-        return #complete the return statement to indicate that the city was not found
+        return "Location was not found"
+    first_lat = location['lat']
+    first_lon = location['lon']
+    url = "http://api.openweathermap.org/data/2.5/weather"
+    params = {"lat": first_lat, "lon": first_lon, "appid": api_key}
 
-    url = #complete the URL to fetch weather data from OpenWeatherMap API
-    params = #complete the params dictionary to include the latitude, longitude, units as metric, and the API key
-
-    response = requests.#complete(url, params=params)
+    response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        return #complete the return statement to indicate that the wheather weather data retrieved or not
+        return "Error fetching weather data"
 
     weather = response.json()
 
     return (
-        #complete the return statement to format and return the weather information such as including city name, country, temperature, weather description, humidity, and wind speed
+        f"City: {weather['name']}, Country: {weather['sys']['country']}, "
+        f"Temperature: {weather['main']['temp']}K, "
+        f"Weather: {weather['weather'][0]['description']}, "
+        f"Humidity: {weather['main']['humidity']}%, "
+        f"Wind Speed: {weather['wind']['speed']} m/s"
     )
 
 # =========================
 # ISS FUNCTIONS
 # =========================
 def reverse_geocode(lat, lon, api_key):
-    url = #complete the URL to fetch reverse geocoding data from OpenWeatherMap API
-    params = #complete the params dictionary to include the latitude, longitude, limit, and the API key
+    url = "http://api.openweathermap.org/geo/1.0/reverse"
+    params = {
+                "lat": lat,
+                "lon": lon,
+                "limit": 1, 
+                "appid": api_key
+            }
 
-    response = requests.#complete(url, params=params)
+    response = requests.
 
     if response.status_code != 200:
         return None
@@ -215,9 +222,10 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     api_keys = get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
                   
 
-    token = get_webex_token()
+    #token = get_webex_token()
 
     weather_key = api_keys.get("weather_api")
+    token = api_keys.get("webex_api_key")
 
     rooms = get_rooms(token)
 

@@ -34,11 +34,11 @@ response = requests.get(url, headers=headers, params=params)
 
 | Criteria | Details |
 |---------|---------|
-| API Base URL | `_______________________________` |
+| API Base URL | `http://api.open-notify.org/iss-now.json_` |
 | Endpoint for current ISS location | `_______________________________` |
 | Sample response format (example JSON) |  
-```
-
+```json
+{"iss_position": {"latitude": "32.5523", "longitude": "155.8306"}, "timestamp": 1790755940, "message": "success"}
 ```
 |
 
