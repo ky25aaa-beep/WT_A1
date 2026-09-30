@@ -11,12 +11,13 @@
 import requests
 import json
 import time
-from time import datetime
 import os # import os module to access environment variables
+from dotenv import load_dotenv, dotenv_values 
+load_dotenv() 
 
 global use_hardcoded_key
 use_hardcoded_key = False # Default to use False (During Testing True)
-api_keys_used_name = ("weather_api", "webex_api", "ISS_api", "Geocoding_api")
+api_keys_used = ("weather_api", "webex_api", "ISS_api", "Geocoding_api")
 api_keys_hardcoded = {
     "weather_api": "provide_key",
     "webex_api": "provide_key",
@@ -27,11 +28,6 @@ api_keys_hardcoded = {
 # CONFIGURATION FUNCTIONS
 # =========================
 #if system defined keys exist use those else if harcoded keys exist in the python file exist use those else use user provided keys 
-
-def get_environment_variable_key(key_name):
-    env_var_name = f"{key_name}_key"
-    api_key = os.environ.get(env_var_name)
-    return api_key
 
 def get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     api_keys = {}
@@ -181,7 +177,7 @@ def reverse_geocode(lat, lon, api_key):
                 "appid": api_key
             }
 
-    response = requests.
+    response = requests.get(url, params=params)
 
     if response.status_code != 200:
         return None
@@ -191,27 +187,27 @@ def reverse_geocode(lat, lon, api_key):
 
 
 def get_iss_location(api_key):
-    url = #complete the URL to fetch ISS current location from the Open Notify API
+    url = "http://api.open-notify.org/iss-now.json"
 
-    response = requests.#complete(#complete)
+    response = requests.get(url)
 
     if response.status_code != 200:
-        return #complete the return statement to indicate whether ISS location retrieved or not
+        return None
 
     data = response.json()
 
-    lat = data[#complete][#complete]
-    lon = data[#complete][#complete]
+    lat = data['iss_position']['latitude']
+    lon = data['iss_position']['longitude']
 
     location = reverse_geocode(lat, lon, api_key)
 
     place = "Over Ocean / No Nearby City"
 
     if location:
-        place = #
+        place = location.get("name", "Over Ocean / No Nearby City")
 
     return (
-        #complete the return statement to format and return the ISS location information including latitude, longitude, and place name
+        f"Latitude: {lat}, Longitude: {lon}, Place: {place}"
     )
 
 # =========================
@@ -225,12 +221,11 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     #token = get_webex_token()
 
     weather_key = api_keys.get("weather_api")
-    token = api_keys.get("webex_api_key")
-
+    token = api_keys.get("webex_api")
     rooms = get_rooms(token)
 
     if not rooms:
-        print(#complete the print statement )
+        print("No rooms found.")
         return
 
     print_rooms(rooms)
@@ -246,9 +241,9 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
 
             last_message_id = message_id
 
-            print(#complete the print statement to display the received message text)
+            print(f"Received message: {message_text}")
 
-            if not message_text.startswith(#complete):
+            if not message_text.startswith("/"):
                 continue
 
             if message_text.lower() == "/help":
@@ -258,7 +253,7 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                     "/weather <city>\n/iss\n/help\n/quit"
                 )
 
-            elif message_text.lower().startswith(#complete):
+            elif message_text.lower().startswith("/weather"):
 
                 parts = message_text.split(maxsplit=1)
 
@@ -268,10 +263,10 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                     city = parts[1]
                     send_message(token, room_id, get_weather(city, weather_key))
 
-            elif message_text.lower() == "#complete":
+            elif message_text.lower() == "/iss":
                 send_message(token, room_id, get_iss_location(weather_key))
 
-            elif message_text.lower() == "#complete":
+            elif message_text.lower() == "/quit":
                 send_message(token, room_id, "AstroBot shutting down.")
                 break
 
@@ -280,6 +275,5 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
 
         time.sleep(5)
 
-
-if __name__ == '__main__':
-    main()
+print(os.getenv("weather_api_key"))
+main(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
