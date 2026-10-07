@@ -240,7 +240,7 @@ response = requests.get(url, headers=headers, params=params)
 
 ```
 |
-
+s
 ---
 
 ##  Epoch to Human Time Conversion (Python time module) (2 marks)
@@ -261,18 +261,46 @@ response = requests.get(url, headers=headers, params=params)
 
 | Criteria | Details |
 |---------|---------|
-| API Provider | '_________' |
-| API Base URL | `_______________________________` |
-| Endpoint | `_______________________________` |
-| Authentication method | `_______________________________` |
-| Required query parameters | `_______________________________` |
+| API Provider | 'https://freedictionaryapi.com' |
+| API Base URL | `https://freedictionaryapi.com/api/v1` |
+| Endpoint | `https://freedictionaryapi.com/api/v1/entries/en/` |
+| Authentication method | `none` |
+| Required query parameters | `none` |
 | Sample JSON response (formatted example) |  
-```
+```json
+{
+  "word": "hello",
+  "definitions": [
+    {
+      "partOfSpeech": "interjection",
+      "senses": [
+        "A greeting (salutation) said when meeting someone or acknowledging someone s arrival or presence.",
+        "A greeting used when answering the telephone.",
+        "A call for response if it is not clear if anyone is present or listening, or if a telephone conversation may have been disconnected.",
+        "(colloquial) Used sarcastically to imply that the person addressed has done something the speaker considers to be foolish, or missed something that should have been obvious.",
+        "(chiefly UK) An expression of puzzlement or discovery."
+      ]
+    },
+    {
+      "partOfSpeech": "noun",
+      "senses": [
+        "\"Hello!\" or an equivalent greeting."
+      ]
+    },
+    {
+      "partOfSpeech": "verb",
+      "senses": [
+        "(transitive) To greet with \"hello\"."
+      ]
+    }
+  ]
+}
 
 ```
 |
 
 --- 
+**Json has been shortned as response contains pronounciation variations for regions and english is spoken all over the place and therefore there are hundreds of entries**
 
 ##  Evaluation – Web Architecture, MVC Design & Security 
 

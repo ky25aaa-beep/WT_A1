@@ -18,12 +18,13 @@ load_dotenv()
 
 global use_hardcoded_key
 use_hardcoded_key = False # Default to use False (During Testing True)
-api_keys_used = ("weather_api", "webex_api", "ISS_api", "Geocoding_api")
+api_keys_used = ("weather_api", "webex_api", "ISS_api", "Geocoding_api", "Superhero_api")
 api_keys_hardcoded = {
     "weather_api": "provide_key",
     "webex_api": "provide_key",
     "ISS_api": "provide_key",
-    "Geocoding_api": "provide_key"
+    "Geocoding_api": "provide_key",
+    "Superhero_api": "provide_key"
 }
 # =========================
 # CONFIGURATION FUNCTIONS
@@ -112,7 +113,9 @@ def get_latest_message(token, room_id):
         "Accept": "application/json"
     }
     response = requests.get(url, headers=headers, params=params)
-
+    if response.status_code == 429:
+        handle_api_error("Webex_api", response, room_id, function_name="get_latest_message")
+        time.sleep(60)  # Wait for 60 seconds before retrying
     if response.status_code != 200:
         handle_api_error("Webex_api", response, room_id, function_name="get_latest_message")
         return None, None, None
@@ -232,6 +235,21 @@ def get_iss_location(api_key, token, room_id, parent_id):
     return (
         f"Latitude: {lat}, Longitude: {lon}, Place: {place}"
     )
+# =========================
+# Dictionary FUNCTIONS
+# =========================
+def get_word_definition(word, token, room_id, parent_id):
+    url = f"https://freedictionaryapi.com/api/v1/entries/en/{word}"
+    request = requests.get(url)
+    if request.status_code != 200:
+        handle_api_error("Dictionary_api", request, word, token, room_id, parent_id, function_name="get_word_definition")
+        return "Error fetching word definition"
+    response = request.json()
+    firstentry = response.get("entries", [0])
+    if not firstentry:
+        return f"No definition found for the word: {word}"
+    definition = firstentry.get("senses", [])[0].get("definition")
+    return f"Word: {word}, Definition: {definition}"      
 
 # =========================
 # MAIN BOT LOGIC
@@ -290,6 +308,14 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
             elif message_text.lower() == "/iss":
                 send_message(token, room_id, get_iss_location(weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
 
+            elif message_text.lower().startswith("/define"):
+                parts = message_text.split(maxsplit=1)
+                if len(parts) < 2:
+                    send_message(token, room_id, "Usage: /define <word>", parent_id=last_message_id)
+                else:
+                    word = parts[1]
+                    send_message(token, room_id, get_word_definition(word, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
+
             elif message_text.lower() == "/quit":
                 send_message(token, room_id, "AstroBot shutting down.", parent_id=last_message_id)
                 break
@@ -297,7 +323,7 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
             else:
                 send_message(token, room_id, "Unknown command. Use /help", parent_id=last_message_id)
 
-        time.sleep(2)
+        time.sleep(3)
 
 
 
