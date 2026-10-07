@@ -114,8 +114,9 @@ def get_latest_message(token, room_id):
     }
     response = requests.get(url, headers=headers, params=params)
     if response.status_code == 429:
-        handle_api_error("Webex_api", response, room_id, function_name="get_latest_message")
-        time.sleep(60)  # Wait for 60 seconds before retrying
+        retry_after = int(response.headers.get("Retry-After", 60))  # Default to 60 seconds if not provided
+        print(f"Rate limit exceeded. Retrying after {retry_after} seconds.")
+        time.sleep(retry_after)  # Wait for the specified time before retrying
     if response.status_code != 200:
         handle_api_error("Webex_api", response, room_id, function_name="get_latest_message")
         return None, None, None
