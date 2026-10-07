@@ -90,15 +90,15 @@ def get_latest_message(token, room_id):
     response = requests.get(url, headers=headers, params=params)
 
     if response.status_code != 200:
-        return None, None
+        return None, None, None
 
     data = response.json().get("items", [])
 
     if not data:
-        return None, None
+        return None, None, None
 
     latest = data[0]
-    return latest.get("id"), latest.get("text", "")
+    return latest.get("id"), latest.get("text", ""), latest.get("personEmail", "")
 
 def send_message(token, room_id, message, parent_id):
     url = "https://webexapis.com/v1/messages"
@@ -113,7 +113,6 @@ def send_message(token, room_id, message, parent_id):
         "parentId": parent_id
     }
     response = requests.request('POST', url, headers=headers, data = json.dumps(data))
-    print(response.status_code, response.text)
     if response.status_code != 200:
         print("Error sending message:", response.status_code, response.text)
 
@@ -222,13 +221,14 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     print_rooms(rooms)
     room_id = select_room(rooms)
 
-    last_message_id, _ = get_latest_message(token, room_id)
+    last_message_id, _, _ = get_latest_message(token, room_id)
 
     while True:
 
-        message_id, message_text = get_latest_message(token, room_id)
-
+        message_id, message_text, sender_email = get_latest_message(token, room_id)
         if message_id and message_id != last_message_id:
+            if sender_email and sender_email.endswith("@webex.bot"):
+                continue
 
             last_message_id = message_id
 
