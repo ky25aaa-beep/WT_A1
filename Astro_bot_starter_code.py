@@ -10,7 +10,7 @@
 
 import requests
 import json
-import time
+from datetime import datetime, time
 import os # import os module to access environment variables
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
@@ -28,6 +28,23 @@ api_keys_hardcoded = {
 # CONFIGURATION FUNCTIONS
 # =========================
 #if system defined keys exist use those else if harcoded keys exist in the python file exist use those else use user provided keys 
+
+def handle_api_error(api_name, response, query):
+    Error_Folder = '/API_Error/'
+    if os.path.exists(Error_Folder) == True:
+        Error_message = f"""
+Error Details
+Time: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
+api_name: {api_name}
+Response Status Code: {response.status_code}
+Response Text: {response.text}
+        """
+        f = open(f"{api_name}-{datetime.now().strftime('%d-%m-%Y')}-error.txt", "x")
+        f.write(Error_message)
+        f.close()
+    else:
+        os.mkdir(Error_Folder)
+        handle_api_error(api_name, response, query)
 
 def get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     api_keys = {}
@@ -59,7 +76,7 @@ def get_rooms(token):
     )
 
     if response.status_code != 200:
-        print("Error fetching rooms:", response.status_code)
+        handle_api_error("Webex_api", response, None)
         return []
 
     return response.json().get("items", [])
@@ -90,6 +107,7 @@ def get_latest_message(token, room_id):
     response = requests.get(url, headers=headers, params=params)
 
     if response.status_code != 200:
+        handle_api_error("Webex_api", response, room_id)
         return None, None, None
 
     data = response.json().get("items", [])
@@ -114,7 +132,8 @@ def send_message(token, room_id, message, parent_id):
     }
     response = requests.request('POST', url, headers=headers, data = json.dumps(data))
     if response.status_code != 200:
-        print("Error sending message:", response.status_code, response.text)
+        handle_api_error("Webex_api", response, room_id)
+        return None
 
 # =========================
 # WEATHER FUNCTIONS
@@ -127,6 +146,7 @@ def get_city_coordinates(city, api_key):
 
 
     if response.status_code != 200:
+        handle_api_error("Geocoding_api", response, city)
         return None
 
     data = response.json()
@@ -146,6 +166,7 @@ def get_weather(city, api_key):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
+        handle_api_error("Weather_api", response, city)
         return "Error fetching weather data"
 
     weather = response.json()
@@ -173,6 +194,7 @@ def reverse_geocode(lat, lon, api_key):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
+        handle_api_error("Reverse_Geocoding_api", response, (lat, lon))
         return None
 
     data = response.json()
@@ -185,6 +207,7 @@ def get_iss_location(api_key):
     response = requests.get(url)
 
     if response.status_code != 200:
+        handle_api_error("ISS_api", response, None)
         return None
 
     data = response.json()
