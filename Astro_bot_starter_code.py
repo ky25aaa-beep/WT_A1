@@ -114,6 +114,7 @@ def get_latest_message(token, room_id):
     }
     response = requests.get(url, headers=headers, params=params)
     if response.status_code == 429:
+        global retry_after
         retry_after = int(response.headers.get("Retry-After", 60))  # Default to 60 seconds if not provided
         print(f"Rate limit exceeded. Retrying after {retry_after} seconds.")
         time.sleep(retry_after)  # Wait for the specified time before retrying
@@ -323,8 +324,11 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
 
             else:
                 send_message(token, room_id, "Unknown command. Use /help", parent_id=last_message_id)
+        if 'retry_after' in globals():
+            time.sleep(retry_after)
+        else:
+            time.sleep(3)
 
-        time.sleep(3)
 
 
 
