@@ -10,7 +10,8 @@
 
 import requests
 import json
-from datetime import datetime, time
+from datetime import datetime
+import time
 import os # import os module to access environment variables
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
@@ -29,22 +30,28 @@ api_keys_hardcoded = {
 # =========================
 #if system defined keys exist use those else if harcoded keys exist in the python file exist use those else use user provided keys 
 
-def handle_api_error(api_name, response, query):
-    Error_Folder = '/API_Error/'
+def handle_api_error(api_name, response, query, token=None, room_id=None, parent_id=None, function_name=None):
+    Error_Folder = './API_Error/'
     if os.path.exists(Error_Folder) == True:
         Error_message = f"""
 Error Details
 Time: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
 api_name: {api_name}
+function: {function_name}
 Response Status Code: {response.status_code}
 Response Text: {response.text}
         """
-        f = open(f"{api_name}-{datetime.now().strftime('%d-%m-%Y')}-error.txt", "x")
+        f = open(f"{Error_Folder}{api_name}-{datetime.now().strftime('%d-%m-%Y %H-%M-%S')}-error.txt", "x")
         f.write(Error_message)
         f.close()
+        if api_name == "Webex_api":
+            return None
+        else:
+            send_message(token, room_id, Error_message, parent_id)
+
     else:
         os.mkdir(Error_Folder)
-        handle_api_error(api_name, response, query)
+        handle_api_error(api_name, response, query, token, room_id, parent_id)
 
 def get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     api_keys = {}
@@ -76,7 +83,7 @@ def get_rooms(token):
     )
 
     if response.status_code != 200:
-        handle_api_error("Webex_api", response, None)
+        handle_api_error("Webex_api", response, None, function_name="get_rooms")
         return []
 
     return response.json().get("items", [])
@@ -107,7 +114,7 @@ def get_latest_message(token, room_id):
     response = requests.get(url, headers=headers, params=params)
 
     if response.status_code != 200:
-        handle_api_error("Webex_api", response, room_id)
+        handle_api_error("Webex_api", response, room_id, function_name="get_latest_message")
         return None, None, None
 
     data = response.json().get("items", [])
@@ -132,13 +139,13 @@ def send_message(token, room_id, message, parent_id):
     }
     response = requests.request('POST', url, headers=headers, data = json.dumps(data))
     if response.status_code != 200:
-        handle_api_error("Webex_api", response, room_id)
+        handle_api_error("Webex_api", response, room_id, function_name="send_message")
         return None
 
 # =========================
 # WEATHER FUNCTIONS
 # =========================
-def get_city_coordinates(city, api_key):
+def get_city_coordinates(city, api_key, token, room_id, parent_id):
     url = "http://api.openweathermap.org/geo/1.0/direct"
     params = {"q":{city}, "appid": api_key} 
     response = requests.request('GET', url, params=params)
@@ -146,15 +153,15 @@ def get_city_coordinates(city, api_key):
 
 
     if response.status_code != 200:
-        handle_api_error("Geocoding_api", response, city)
+        handle_api_error("Geocoding_api", response, city, token, room_id, parent_id, function_name="get_city_coordinates")
         return None
 
     data = response.json()
     return data[0] if data else None
 
 
-def get_weather(city, api_key):
-    location = get_city_coordinates(city, api_key)
+def get_weather(city, api_key, token, room_id, parent_id):
+    location = get_city_coordinates(city, api_key, token, room_id, parent_id)
 
     if not location:
         return "Location was not found"
@@ -166,7 +173,7 @@ def get_weather(city, api_key):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        handle_api_error("Weather_api", response, city)
+        handle_api_error("Weather_api", response, city, token, room_id, parent_id, function_name="get_weather")
         return "Error fetching weather data"
 
     weather = response.json()
@@ -182,7 +189,7 @@ def get_weather(city, api_key):
 # =========================
 # ISS FUNCTIONS
 # =========================
-def reverse_geocode(lat, lon, api_key):
+def reverse_geocode(lat, lon, api_key, token, room_id, parent_id):
     url = "http://api.openweathermap.org/geo/1.0/reverse"
     params = {
                 "lat": lat,
@@ -194,20 +201,20 @@ def reverse_geocode(lat, lon, api_key):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        handle_api_error("Reverse_Geocoding_api", response, (lat, lon))
+        handle_api_error("Reverse_Geocoding_api", response, (lat, lon), token, room_id, parent_id, function_name="reverse_geocode")
         return None
 
     data = response.json()
     return data[0] if data else None
 
 
-def get_iss_location(api_key):
+def get_iss_location(api_key, token, room_id, parent_id):
     url = "http://api.open-notify.org/iss-now.json"
 
     response = requests.get(url)
 
     if response.status_code != 200:
-        handle_api_error("ISS_api", response, None)
+        handle_api_error("ISS_api", response, None, token, room_id, parent_id, function_name="get_iss_location")
         return None
 
     data = response.json()
@@ -215,7 +222,7 @@ def get_iss_location(api_key):
     lat = data['iss_position']['latitude']
     lon = data['iss_position']['longitude']
 
-    location = reverse_geocode(lat, lon, api_key)
+    location = reverse_geocode(lat, lon, api_key, token, room_id, parent_id)
 
     place = "Over Ocean / No Nearby City"
 
@@ -278,10 +285,10 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                     send_message(token, room_id, "Usage: /weather <city>", parent_id=last_message_id)
                 else:
                     city = parts[1]
-                    send_message(token, room_id, get_weather(city, weather_key), parent_id=last_message_id)
+                    send_message(token, room_id, get_weather(city, weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
 
             elif message_text.lower() == "/iss":
-                send_message(token, room_id, get_iss_location(weather_key), parent_id=last_message_id)
+                send_message(token, room_id, get_iss_location(weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
 
             elif message_text.lower() == "/quit":
                 send_message(token, room_id, "AstroBot shutting down.", parent_id=last_message_id)
