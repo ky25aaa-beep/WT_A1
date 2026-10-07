@@ -13,7 +13,7 @@ This investigation sheet helps you gather key technical information from the thr
 |---------|---------|
 | API Base URL | `https://webexapis.com/v1` |
 | Authentication Method | `api key` |
-| Endpoint to list rooms | `_______________________________` |
+| Endpoint to list rooms | `https://webexapis.com/v1/rooms` |
 | Endpoint to get messages | `https://webexapis.com/v1/messages` |
 | Endpoint to send message | `https://webexapis.com/v1/messages` |
 | Required headers | `bearer token and methods, if theres a response containing data that datas format` |
@@ -34,8 +34,8 @@ response = requests.get(url, headers=headers, params=params)
 
 | Criteria | Details |
 |---------|---------|
-| API Base URL | `http://api.open-notify.org/iss-now.json_` |
-| Endpoint for current ISS location | `_______________________________` |
+| API Base URL | `http://api.open-notify.org/` |
+| Endpoint for current ISS location | `http://api.open-notify.org/iss-now.json_` |
 | Sample response format (example JSON) |  
 ```json
 {"iss_position": {"latitude": "32.5523", "longitude": "155.8306"}, "timestamp": 1790755940, "message": "success"}
@@ -49,15 +49,129 @@ response = requests.get(url, headers=headers, params=params)
 | Criteria | Details |
 |---------|---------|
 | Provider used (Choose one) | **LocationIQ / Mapbox/ OpenWeatherMap other -provide detail** |
-| API Base URL | `_______________________________` |
-| Endpoint for geocoding | `_______________________________` |
-| Endpoint for reverse geocoding | `_______________________________` |
-| Authentication method | `_______________________________` |
-| Required query parameters | `_______________________________` |
-| Sample request with latitude/longitude | `_______________________________` |
+| API Base URL | `http://api.openweathermap.org/` |
+| Endpoint for geocoding | `http://api.openweathermap.org/geo/1.0/direct` |
+| Endpoint for reverse geocoding | `http://api.openweathermap.org/geo/1.0/reverse` |
+| Authentication method | `parameter appid/apikey` |
+| Required query parameters | `q and appid` |
+| Sample request with latitude/longitude | `
+                "lat": lat,
+                "lon": lon,
+                "limit": 1, 
+                "appid": api_key` |
 | Sample JSON response (formatted example) |  
-```
-
+```json
+[
+    {
+        "name": "Glasgow",
+        "local_names": {
+            "hi": "ग्लास्गो",
+            "mk": "Глазгов",
+            "ta": "கிளாஸ்கோ",
+            "ko": "글래스고",
+            "el": "Γλασκώβη",
+            "tl": "Glasgow",
+            "ca": "Glasgow",
+            "oc": "Glasgow",
+            "af": "Glasgow",
+            "bs": "Glasgow",
+            "th": "กลาสโกว์",
+            "uz": "Glazgo",
+            "fa": "گلاسگو",
+            "ja": "グラスゴー",
+            "la": "Glasgua",
+            "gl": "Glasgow",
+            "ga": "Glaschú",
+            "am": "ግላዝጎ",
+            "hy": "Գլազգո",
+            "lt": "Glazgas",
+            "cv": "Глазго",
+            "it": "Glasgow",
+            "fy": "Glasgow",
+            "zh": "格拉斯哥",
+            "is": "Glasgow",
+            "sr": "Глазгов",
+            "pa": "ਗਲਾਸਗੋ",
+            "ar": "غلاسكو",
+            "bg": "Глазгоу",
+            "ps": "ګلاسګو",
+            "ms": "Glasgow",
+            "tw": "Glasgow",
+            "cs": "Glasgow",
+            "ce": "Глазго",
+            "sd": "گلاسگو",
+            "uk": "Глазго",
+            "ru": "Глазго",
+            "yo": "Glasgow",
+            "id": "Glasgow",
+            "sk": "Glasgow",
+            "sq": "Glasgou",
+            "ka": "გლაზგო",
+            "he": "גלאזגו",
+            "gv": "Glaschu",
+            "lv": "Glāzgova",
+            "pl": "Glasgow",
+            "az": "Qlazqo",
+            "mi": "Karahiko",
+            "li": "Glasgow",
+            "kn": "ಗ್ಲಾಸ್ಗೋ",
+            "de": "Glasgow",
+            "tt": "Glazgo",
+            "ml": "ഗ്ലാസ്ഗോ",
+            "pt": "Glasgow",
+            "ba": "Глазго",
+            "no": "Glasgow",
+            "vi": "Glasgow",
+            "jv": "Glasgow",
+            "nn": "Glasgow",
+            "ku": "Glasgow",
+            "kv": "Глазго",
+            "fi": "Glasgow",
+            "es": "Glasgow",
+            "bn": "গ্লাসগো",
+            "my": "ဂလပ်စဂိုးမြို့",
+            "ky": "Глазго",
+            "mr": "ग्लासगो",
+            "et": "Glasgow",
+            "sh": "Glasgow",
+            "ug": "Glasgow",
+            "gd": "Glaschu",
+            "te": "గ్లాస్గో",
+            "nl": "Glasgow",
+            "mn": "Глазго",
+            "eo": "Glasgovo",
+            "yi": "גלאזגא",
+            "tr": "Glasgow",
+            "cy": "Glasgow",
+            "fo": "Glasgow",
+            "ro": "Glasgow",
+            "sa": "ग्लास्गो",
+            "co": "Glasgow",
+            "en": "Glasgow",
+            "sl": "Glasgow",
+            "tg": "Глосгу",
+            "fr": "Glasgow",
+            "kw": "Glaschu",
+            "hr": "Glasgow",
+            "da": "Glasgow",
+            "sv": "Glasgow",
+            "ur": "گلاسگو",
+            "os": "Глазго",
+            "sw": "Glasgow",
+            "hu": "Glasgow",
+            "ha": "Glasgow",
+            "br": "Glasc'ho",
+            "qu": "Glasgow",
+            "be": "Глазга",
+            "eu": "Glasgow",
+            "kk": "Глазго"
+        },
+        "lat": 55.861155,
+        "lon": -4.2501687,
+        "country": "GB",
+        "state": "Scotland"
+    }
+]
 ```
 |
 
@@ -69,12 +183,60 @@ response = requests.get(url, headers=headers, params=params)
 | Criteria | Details |
 |---------|---------|
 | API Provider (Choose one) | **OpenWeather, OpenWeatherMap (or other – provide details)** |
-| API Base URL | `_______________________________` |
-| Endpoint for current weather | `_______________________________` |
-| Authentication method | `_______________________________` |
-| Required query parameters | `_______________________________` |
+| API Base URL | `http://api.openweathermap.org/` |
+| Endpoint for current weather | `http://api.openweathermap.org/data/2.5/weather` |
+| Authentication method | `parameter api key` |
+| Required query parameters | `"lat": first_lat, "lon": first_lon, "appid": api_key` |
 | Sample JSON response (formatted example) |  
-```
+```json
+{
+    "coord": {
+        "lon": -0.1278,
+        "lat": 51.5074
+    },
+    "weather": [
+        {
+            "id": 501,
+            "main": "Rain",
+            "description": "moderate rain",
+            "icon": "10d"
+        }
+    ],
+    "base": "stations",
+    "main": {
+        "temp": 287.84,
+        "feels_like": 287.77,
+        "temp_min": 286.49,
+        "temp_max": 288.31,
+        "pressure": 1012,
+        "humidity": 92,
+        "sea_level": 1012,
+        "grnd_level": 1009
+    },
+    "visibility": 1735,
+    "wind": {
+        "speed": 1.54,
+        "deg": 340
+    },
+    "rain": {
+        "1h": 2.05
+    },
+    "clouds": {
+        "all": 100
+    },
+    "dt": 1791361483,
+    "sys": {
+        "type": 2,
+        "id": 2075535,
+        "country": "GB",
+        "sunrise": 1791353431,
+        "sunset": 1791393960
+    },
+    "timezone": 3600,
+    "id": 2643743,
+    "name": "London",
+    "cod": 200
+}
 
 ```
 |
