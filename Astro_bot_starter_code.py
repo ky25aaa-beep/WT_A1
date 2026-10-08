@@ -117,6 +117,7 @@ def get_latest_message(token, room_id):
         global retry_after
         retry_after = int(response.headers.get("Retry-After", 60))  # Default to 60 seconds if not provided
         print(f"Rate limit exceeded. Retrying after {retry_after} seconds.")
+        send_message(token, room_id, "Webex request limits have been reached. The bot is currently operating at a slower pace to process everything smoothly. Please allow a little extra time for responses.", parent_id=None)
         time.sleep(retry_after)  # Wait for the specified time before retrying
     if response.status_code != 200:
         handle_api_error("Webex_api", response, room_id, function_name="get_latest_message")
@@ -246,70 +247,117 @@ def get_word_definition(word, token, room_id, parent_id):
     if request.status_code != 200:
         handle_api_error("Dictionary_api", request, word, token, room_id, parent_id, function_name="get_word_definition")
         return "Error fetching word definition"
-    response = request.json()
-    firstentry = response.get("entries", [0])
-    if not firstentry:
-        return f"No definition found for the word: {word}"
-    definition = firstentry.get("senses", [])[0].get("definition")
-    return f"Word: {word}, Definition: {definition}"      
-
-# =========================
-# MAIN BOT LOGIC
-# =========================
-def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     
+    response = request.json()
+    entries = response.get("entries", [])
+    
+    # Check if entries is a list and has at least one item
+    if not entries or not isinstance(entries, list):
+        return f"No definition found for the word: {word}"
+    
+    firstentry = entries[0]
+    
+    senses = firstentry.get("senses", [])        
+    definition = senses[0].get("definition", "No definition text available")
+    return f"Word: {word}, Definition: {definition}"
+# =========================
+# Send Image/File Message LOGIC
+# =========================
+def send_message_file(token, room_id, message, file_url, parent_id):
+    url = "https://webexapis.com/v1/messages"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+    data = {
+        "roomId": room_id,
+        "text": message,
+        "files": file_url,
+        "parentId": parent_id
+    }
+    response = requests.request('POST', url, headers=headers, data = json.dumps(data))
+    if response.status_code != 200:
+        handle_api_error("Webex_api", response, room_id, function_name="send_message")
+        return None
+
+
+# ========================= #
+# Astronomy Picture of the Day LOGIC #
+# ========================= #
+def astronomy_picture_day(token, room_id, parent_id):
+    url = "https://science.nasa.gov/wp-json/wp/v2/apod-basic"
+    response = requests.get(url)
+    
+    if response.status_code != 200:
+        handle_api_error(
+            "NASA_APOD_api",
+            response,
+            None,
+            token,
+            room_id,
+            parent_id,  # Fixed: properly passing parent_id
+            function_name="get_random_apod",
+        )
+        return None
+        
+    data = response.json()
+    import random
+    apod = random.choice(data)
+    
+    return {
+        "message": apod.get("title", "NASA APOD"),
+        "file_url": [apod.get("url", apod.get("hdurl", ""))],
+    }
+
+
+# ========================= #
+# MAIN BOT LOGIC #
+# ========================= #
+def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     api_keys = get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
-                
     weather_key = api_keys.get("weather_api")
     token = api_keys.get("webex_api")
+    
     rooms = get_rooms(token)
-
     if not rooms:
         print("No rooms found.")
         return
-
+        
     print_rooms(rooms)
     room_id = select_room(rooms)
-
     last_message_id, _, _ = get_latest_message(token, room_id)
-
+    
     while True:
-
         message_id, message_text, sender_email = get_latest_message(token, room_id)
+        
         if message_id and message_id != last_message_id:
             if sender_email and sender_email.endswith("@webex.bot"):
                 continue
-
+                
             last_message_id = message_id
-
             print(f"Received message: {message_text}")
+            
             if message_text.startswith("WT-Lvl5-Assignment1-KY"):
                 message_text = message_text[len("WT-Lvl5-Assignment1-KY"):].strip()
+                
             if not message_text.startswith("/"):
                 continue
-
+                
             if message_text.lower() == "/help":
-                send_message(
-                    token,
-                    room_id,
-                    "/weather <city>\n/iss\n/help\n/quit",#
-                    parent_id=last_message_id
-
-                )
-
+                send_message(token, room_id, "/weather <city>\n/iss\n/help\n/quit\n/astronomy", parent_id=last_message_id)
+                
             elif message_text.lower().startswith("/weather"):
-
                 parts = message_text.split(maxsplit=1)
-
                 if len(parts) < 2:
                     send_message(token, room_id, "Usage: /weather <city>", parent_id=last_message_id)
                 else:
                     city = parts[1]
                     send_message(token, room_id, get_weather(city, weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
-
+                    
             elif message_text.lower() == "/iss":
                 send_message(token, room_id, get_iss_location(weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
-
+                
             elif message_text.lower().startswith("/define"):
                 parts = message_text.split(maxsplit=1)
                 if len(parts) < 2:
@@ -317,11 +365,16 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                 else:
                     word = parts[1]
                     send_message(token, room_id, get_word_definition(word, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
-
+                    
             elif message_text.lower() == "/quit":
                 send_message(token, room_id, "AstroBot shutting down.", parent_id=last_message_id)
                 break
-
+                
+            elif message_text.lower() == "/astronomy":
+                apod_data = astronomy_picture_day(token, room_id, parent_id=last_message_id)
+                if apod_data:
+                    # Unpack the dictionary using ** to supply text and files arguments
+                    send_message_file(token, room_id, parent_id=last_message_id, **apod_data)
             else:
                 send_message(token, room_id, "Unknown command. Use /help", parent_id=last_message_id)
         if 'retry_after' in globals():
