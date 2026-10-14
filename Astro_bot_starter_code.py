@@ -18,7 +18,7 @@ load_dotenv()
 
 global use_hardcoded_key
 use_hardcoded_key = False # Default to use False (During Testing True)
-api_keys_used = ("weather_api", "webex_api", "ISS_api", "Geocoding_api", "Superhero_api")
+api_keys_used = ("weather_api", "webex_api", "ISS_api", "Geocoding_api")
 api_keys_hardcoded = {
     "weather_api": "provide_key",
     "webex_api": "provide_key",
@@ -83,7 +83,7 @@ def get_rooms(token):
         timeout=10,
     )
 
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("Webex_api", response, None, function_name="get_rooms")
         return []
 
@@ -119,7 +119,7 @@ def get_latest_message(token, room_id):
         print(f"Rate limit exceeded. Retrying after {retry_after} seconds.")
         send_message(token, room_id, "Webex request limits have been reached. The bot is currently operating at a slower pace to process everything smoothly. Please allow a little extra time for responses.", parent_id=None)
         time.sleep(retry_after)  # Wait for the specified time before retrying
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("Webex_api", response, room_id, function_name="get_latest_message")
         return None, None, None
 
@@ -144,7 +144,7 @@ def send_message(token, room_id, message, parent_id):
         "parentId": parent_id
     }
     response = requests.request('POST', url, headers=headers, data = json.dumps(data))
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("Webex_api", response, room_id, function_name="send_message")
         return None
 
@@ -155,10 +155,9 @@ def get_city_coordinates(city, api_key, token, room_id, parent_id):
     url = "http://api.openweathermap.org/geo/1.0/direct"
     params = {"q":{city}, "appid": api_key} 
     response = requests.request('GET', url, params=params)
-    print(response)
 
 
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("Geocoding_api", response, city, token, room_id, parent_id, function_name="get_city_coordinates")
         return None
 
@@ -178,7 +177,7 @@ def get_weather(city, api_key, token, room_id, parent_id):
 
     response = requests.get(url, params=params)
 
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("Weather_api", response, city, token, room_id, parent_id, function_name="get_weather")
         return "Error fetching weather data"
 
@@ -206,7 +205,7 @@ def reverse_geocode(lat, lon, api_key, token, room_id, parent_id):
 
     response = requests.get(url, params=params)
 
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("Reverse_Geocoding_api", response, (lat, lon), token, room_id, parent_id, function_name="reverse_geocode")
         return None
 
@@ -219,7 +218,7 @@ def get_iss_location(api_key, token, room_id, parent_id):
 
     response = requests.get(url)
 
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("ISS_api", response, None, token, room_id, parent_id, function_name="get_iss_location")
         return None
 
@@ -277,7 +276,7 @@ def send_message_file(token, room_id, message, file_url, parent_id):
         "parentId": parent_id
     }
     response = requests.request('POST', url, headers=headers, data = json.dumps(data))
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error("Webex_api", response, room_id, function_name="send_message")
         return None
 
@@ -293,7 +292,7 @@ def astronomy_picture_day(token, room_id, parent_id):
             }
 
     response = requests.get(url, params=params)
-    if response.status_code != 200:
+    if response.status_code not in [200, 201, 204]:
         handle_api_error(
             "NASA_APOD_api",
             response,
@@ -343,8 +342,8 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
             last_message_id = message_id
             print(f"Received message: {message_text}")
             
-            if message_text.startswith("WT-Lvl5-Assignment1-KY"):
-                message_text = message_text[len("WT-Lvl5-Assignment1-KY"):].strip()
+            if message_text.startswith("Bot"):
+                message_text = message_text[len("Bot"):].strip()
                 
             if not message_text.startswith("/"):
                 continue
@@ -385,7 +384,7 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
         if 'retry_after' in globals():
             time.sleep(retry_after)
         else:
-            time.sleep(3)
+            time.sleep(10)
 
 
 
