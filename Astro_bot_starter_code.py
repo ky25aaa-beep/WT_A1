@@ -287,8 +287,12 @@ def send_message_file(token, room_id, message, file_url, parent_id):
 # ========================= #
 def astronomy_picture_day(token, room_id, parent_id):
     url = "https://science.nasa.gov/wp-json/wp/v2/apod-basic"
-    response = requests.get(url)
-    
+    params = {
+                "page": 1,
+                "per_page": 1,
+            }
+
+    response = requests.get(url, params=params)
     if response.status_code != 200:
         handle_api_error(
             "NASA_APOD_api",
@@ -303,11 +307,12 @@ def astronomy_picture_day(token, room_id, parent_id):
         
     data = response.json()
     import random
-    apod = random.choice(data)
-    
+    hdurl = data[0]["hdurl"]
+    title = data[0]["title"]
+
     return {
-        "message": apod.get("title", "NASA APOD"),
-        "file_url": [apod.get("url", apod.get("hdurl", ""))],
+        "message": title,
+        "file_url": hdurl,
     }
 
 
