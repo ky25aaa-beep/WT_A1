@@ -24,7 +24,6 @@ api_keys_hardcoded = {
     "webex_api": "provide_key",
     "ISS_api": "provide_key",
     "Geocoding_api": "provide_key",
-    "Superhero_api": "provide_key"
 }
 # =========================
 # CONFIGURATION FUNCTIONS
@@ -313,7 +312,19 @@ def astronomy_picture_day(token, room_id, parent_id):
         "message": title,
         "file_url": hdurl,
     }
+# ========================= #
+# Mars weather logic #
+# ========================= #
 
+def mars_weather(api, token, room_id, parent_id ):
+    url = "https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0"
+    params = {
+        "api_key": api,
+        "feedtype": "json",
+        "ver": 1.0
+    }
+    response = requests.get(url, params)
+    return ("https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0")
 
 # ========================= #
 # MAIN BOT LOGIC #
