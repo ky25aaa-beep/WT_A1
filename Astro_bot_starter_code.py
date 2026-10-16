@@ -345,7 +345,7 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     api_keys = get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
     weather_key = api_keys.get("weather_api")
     token = api_keys.get("webex_api")
-    nasa_key = api_keys.get("NASA_key")
+    nasa_key = api_keys.get("NASA_api")
     rooms = get_rooms(token)
     if not rooms:
         print("No rooms found.")
