@@ -18,11 +18,11 @@ load_dotenv()
 
 global use_hardcoded_key
 use_hardcoded_key = False # Default to use False (During Testing True)
-api_keys_used = ("weather_api", "webex_api", "ISS_api", "Geocoding_api")
+api_keys_used = ("weather_api", "webex_api", "NASA_api", "Geocoding_api")
 api_keys_hardcoded = {
     "weather_api": "provide_key",
     "webex_api": "provide_key",
-    "ISS_api": "provide_key",
+    "NASA_api": "provide_key",
     "Geocoding_api": "provide_key",
 }
 # =========================
@@ -299,7 +299,7 @@ def astronomy_picture_day(token, room_id, parent_id):
             token,
             room_id,
             parent_id,  # Fixed: properly passing parent_id
-            function_name="get_random_apod",
+            function_name="astronomy_picture_day",
         )
         return None
         
@@ -316,7 +316,7 @@ def astronomy_picture_day(token, room_id, parent_id):
 # Mars weather logic #
 # ========================= #
 
-def mars_weather(api, token, room_id, parent_id ):
+def get_mars_weather(api, token, room_id, parent_id ):
     url = "https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0"
     params = {
         "api_key": api,
@@ -324,7 +324,19 @@ def mars_weather(api, token, room_id, parent_id ):
         "ver": 1.0
     }
     response = requests.get(url, params)
-    return ("https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0")
+    if response.status_code not in [200, 201, 204]:
+        handle_api_error(
+            "NASA_MARS_WEATHER_api",
+            response,
+            None,
+            token,
+            room_id,
+            parent_id,  # Fixed: properly passing parent_id
+            function_name="NASA_MARS_WEATHER_api",
+        )
+        return None
+    mars_weather_response = response.json()
+    return mars_weather_response
 
 # ========================= #
 # MAIN BOT LOGIC #
@@ -333,7 +345,7 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
     api_keys = get_api_keys(api_keys_used, use_hardcoded_key, api_keys_hardcoded)
     weather_key = api_keys.get("weather_api")
     token = api_keys.get("webex_api")
-    
+    nasa_key = api_keys.get("NASA_key")
     rooms = get_rooms(token)
     if not rooms:
         print("No rooms found.")
@@ -372,7 +384,9 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                     
             elif message_text.lower() == "/iss":
                 send_message(token, room_id, get_iss_location(weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
-                
+            elif message_text.lower() == "/mars_weather":
+                send_message(token, room_id, get_mars_weather(nasa_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
+                                
             elif message_text.lower().startswith("/define"):
                 parts = message_text.split(maxsplit=1)
                 if len(parts) < 2:
