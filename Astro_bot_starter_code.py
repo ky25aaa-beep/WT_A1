@@ -308,10 +308,8 @@ def astronomy_picture_day(token, room_id, parent_id):
     hdurl = data[0]["hdurl"]
     title = data[0]["title"]
 
-    return {
-        "message": title,
-        "file_url": hdurl,
-    }
+    return title, hdurl
+
 # ========================= #
 # Mars weather logic #
 # ========================= #
@@ -400,10 +398,8 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                 break
                 
             elif message_text.lower() == "/astronomy":
-                apod_data = astronomy_picture_day(token, room_id, parent_id=last_message_id)
-                if apod_data:
-                    # Unpack the dictionary using ** to supply text and files arguments
-                    send_message_file(token, room_id, parent_id=last_message_id, **apod_data)
+                message, file_url = astronomy_picture_day(token, room_id, parent_id=last_message_id)
+                send_message_file(token, room_id, message, file_url, parent_id=last_message_id)
             else:
                 send_message(token, room_id, "Unknown command. Use /help", parent_id=last_message_id)
         if 'retry_after' in globals():
