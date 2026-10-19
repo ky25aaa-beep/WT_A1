@@ -12,16 +12,16 @@ This investigation sheet helps you gather key technical information from the thr
 | Criteria | Details |
 |---------|---------|
 | API Base URL | `https://webexapis.com/v1` |
-| Authentication Method | `api key` |
+| Authentication Method | Webex access token in the `Authorization` header using the Bearer scheme |
 | Endpoint to list rooms | `https://webexapis.com/v1/rooms` |
 | Endpoint to get messages | `https://webexapis.com/v1/messages` |
 | Endpoint to send message | `https://webexapis.com/v1/messages` |
-| Required headers | `bearer token and methods, if theres a response containing data that datas format` |
+| Required headers | `Authorization: Bearer <access_token>` and `Accept: application/json`; JSON POST requests also use `Content-Type: application/json` |
 
-#### Sample full GET or POST request  
+#### Sample GET request to retrieve room messages
 ```python 
-url = `https://webexapis.com/v1/messages`
-params = {"roomId":{room_id}, "max": 100}
+url = 'https://webexapis.com/v1/messages'
+params = {"roomId": room_id, "max": 100, "mentionedPeople": "me"}
 headers = {
   "Authorization": f"Bearer {token}",
   "Accept": "application/json"
@@ -35,7 +35,7 @@ response = requests.get(url, headers=headers, params=params)
 | Criteria | Details |
 |---------|---------|
 | API Base URL | `http://api.open-notify.org/` |
-| Endpoint for current ISS location | `http://api.open-notify.org/iss-now.json_` |
+| Endpoint for current ISS location | `http://api.open-notify.org/iss-now.json` |
 | Sample response format (example JSON) |  
 ```json
 {"iss_position": {"latitude": "32.5523", "longitude": "155.8306"}, "timestamp": 1790755940, "message": "success"}
@@ -48,17 +48,14 @@ response = requests.get(url, headers=headers, params=params)
 
 | Criteria | Details |
 |---------|---------|
-| Provider used (Choose one) | OpernWeatherMap.org |
+| Provider used (Choose one) | OpenWeather |
 | API Base URL | `http://api.openweathermap.org/` |
 | Endpoint for geocoding | `http://api.openweathermap.org/geo/1.0/direct` |
 | Endpoint for reverse geocoding | `http://api.openweathermap.org/geo/1.0/reverse` |
-| Authentication method | `parameter appid/apikey` |
-| Required query parameters | `q and appid` |
-| Sample request with latitude/longitude | `
-                "lat": lat,
-                "lon": lon,
-                "limit": 1, 
-                "appid": api_key` |
+| Authentication method | OpenWeather API key passed as the `appid` query parameter |
+| Direct geocoding parameters | `q` (city name) and `appid`; `limit` is optional |
+| Reverse geocoding parameters | `lat`, `lon`, and `appid`; `limit` is optional |
+| Sample reverse geocoding request | `https://api.openweathermap.org/geo/1.0/reverse?lat=55.86&lon=-4.25&limit=1&appid={API_KEY}` |
 | Sample JSON response (formatted example) |  
 ```json
 [
@@ -183,10 +180,10 @@ response = requests.get(url, headers=headers, params=params)
 | Criteria | Details |
 |---------|---------|
 | API Provider (Choose one) | **OpenWeather, OpenWeatherMap (or other – provide details)** |
-| API Base URL | `http://api.openweathermap.org/` |
-| Endpoint for current weather | `http://api.openweathermap.org/data/2.5/weather` |
-| Authentication method | `parameter api key` |
-| Required query parameters | `"lat": first_lat, "lon": first_lon, "appid": api_key` |
+| API Base URL | `https://api.openweathermap.org/` |
+| Endpoint for current weather | `https://api.openweathermap.org/data/2.5/weather` |
+| Authentication method | OpenWeather API key passed as the `appid` query parameter |
+| Required query parameters | `lat`, `lon`, and `appid`; the bot also sends `units=metric` to request Celsius |
 | Sample JSON response (formatted example) |  
 ```json
 {
@@ -204,10 +201,10 @@ response = requests.get(url, headers=headers, params=params)
     ],
     "base": "stations",
     "main": {
-        "temp": 287.84,
-        "feels_like": 287.77,
-        "temp_min": 286.49,
-        "temp_max": 288.31,
+        "temp": 14.69,
+        "feels_like": 14.62,
+        "temp_min": 13.34,
+        "temp_max": 15.31,
         "pressure": 1012,
         "humidity": 92,
         "sea_level": 1012,
@@ -264,7 +261,7 @@ print(epoch_to_human_time(1790755940))
 
 ---
 
-##  Extended Feature API ( 3 marks)
+##  Free Dictionary API (used by `/define`)
 
 | Criteria | Details |
 |---------|---------|
@@ -309,6 +306,19 @@ print(epoch_to_human_time(1790755940))
 --- 
 **Json has been shortned as response contains pronounciation variations for regions and english is spoken all over the place and therefore there are hundreds of entries**
 
+##  Extended Feature API: NASA APOD (3 marks)
+
+| Criteria | Details |
+|---------|---------|
+| API Provider | NASA APOD data served by NASA Science |
+| Endpoint used in the code | `https://science.nasa.gov/wp-json/wp/v2/apod-basic` |
+| Authentication method | None used by this endpoint in the current implementation |
+| Query parameters | `page=1` and `per_page=1` |
+| Response data used | The response is a JSON list. The bot reads the first item's `title` and `hdurl`, or `url` if `hdurl` is not present. |
+| Bot command | `/astronomy` |
+
+The `/astronomy` command sends the returned title and image URL to Webex. The Free Dictionary API is a separate feature used by `/define`, rather than the astronomy extension.
+
 ##  Evaluation – Web Architecture, MVC Design & Security 
 
 In this section, evaluate how web technologies, architecture, and design patterns have been applied in your **AstroBot**. Your responses must relate directly to your implementation and include reflection on your design decisions.
@@ -336,20 +346,20 @@ Include a **simple block diagram** to illustrate this interaction.
 Astrobot uses RESTful APIs, Instead of treating the server like a list of random functions to execute, a RESTful API treats everything on the server as a resource (such as a user, a product, or an image). Each resource is given a unique web address called a URI (Uniform Resource Identifier) or endpoint.
 
 #### GET Requests
-The API requests the latest messages from the webex api; it also requests the definition of words from the dictionary api; the astronomical photo of the data from the nasa api; the weather and geolocation data from the openweather api, and finally the position of the iss from the nasa api. 
+The bot uses GET requests to retrieve Webex messages, dictionary entries, NASA APOD data, OpenWeather weather and geocoding data, and the ISS position from Open Notify. It uses POST requests to send messages to Webex.
 
 #### POST Requests
 The API pushes (posts) messages to the webex api containing the new message content 
 
 #### How Requests are formatted
 
-Every api has their own required formatting but the overall idea is fairly similar, there is a specific endpoint for that function we call this a resource and for an example https://webexapis.com/v1/messages. This is the specific endpoint for the messages resource the api itself sits in https://webexapis.com/v1, the webex api requires authentication and like most apis this is as an apikey provided in the http message, for some more modern systems this is as a token in the authorisation header, a portion of a http request that is specified for this exact purpose. If the authentication is successful the request is then handled by the api, it usually does some processing then returns a result for most apis this is json but it could be any format. Most Api's take the information they need to process a request in the parameters field for the messages api (this returns the messages in a particular room in webex) the api needs room ID, but it can filter with specifics like max and mentionedpeople. 
+Each API has its own endpoints and required parameters. For example, the Webex Messages endpoint is `https://webexapis.com/v1/messages`. Webex identifies the account with an access token in the `Authorization` header using the Bearer scheme. The message-list request includes a `roomId` and can include filters such as `max` and `mentionedPeople`. OpenWeather requests use the `appid` query parameter for the API key, while the ISS location endpoint used here does not require parameters or authentication. Successful requests return JSON data that the bot parses and formats for Webex.
 
-While most restful api's work like this some apis handle data requests differently, apis like the freedictionary api don't require authorisation and dont use the requests field instead they are simplified as the api only requires the singular paramter word to define they take it as a specific resource under the endpoint /v1/entries/en. This still uses the same get request just has a different way of providing request data. There is a limitation to this method that only 1 data point is parsable and the avoidance of an api token means the api has no way to validate requests. However as the endpoint handles no private data just being a dictionary it doesn't require this from a security standpoint. 
+The Free Dictionary endpoint places the requested word in its URL path, so `/define hello` requests the `hello` entry. It does not require authentication. This differs from OpenWeather's query-parameter API key and Webex's Bearer access token.
 
 #### How API's/Endpoints Respond
 
-Once a HTTP Request is made whether that is GET, POST, POST, DELETE. The Server will response all responses have a code these codes are three digits long usually (can contain a decimal i.e xxx.xx) they have the following meanings:
+An HTTP response includes a three-digit status code. The code indicates whether the request succeeded or whether an error occurred; status codes are integers, not decimal values. Common ranges are:
 
 1xx - Informational (100 Continue, 101 Switching Protocols )
 2xx - Successful (200 OK, 201 Created, 204 No Content (DELETE WORKED))
@@ -376,7 +386,7 @@ This code makes a request to the url "url" with specified headers and parameters
     if response.status_code != 200:
 ```
 
-This is a similar bit of code but instead of matching if the code is 429 it checks if it isn't 200, this code isn't perfect if the api uses asp.net and returns 200.0 unlike apache it will fail, if the response contains 201/204 instead of 200 it will falsely capture a successful request as unsuccessful. 
+Checking only for `200` can incorrectly treat another successful status as a failure. For example, `201` means the request succeeded and created a resource, and `204` means it succeeded with no response body. The accepted success codes should match the endpoint's documented responses; the web server software does not change a status code into a decimal.
 ```python 
 if response.status_code not in [200, 201, 204]:
 ```
