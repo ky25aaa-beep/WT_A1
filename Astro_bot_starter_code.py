@@ -266,11 +266,13 @@ def format_weather_report(weather, location_name=None):
     cloud_text = f"{cloud_cover}%" if cloud_cover is not None else "Unknown"
 
     return (
-        f"City: {city}, Country: {country}, "
-        f"Temperature: {temperature_text}, Weather: {weather_description}, "
-        f"Humidity: {humidity_text}, Wind Speed: {wind_text}, "
-        f"Cloud Cover: {cloud_text}, "
-        f"Stargazing: Best after sunset ({sunset_time}). "
+        f"City: {city}, Country: {country}\n"
+        f"Temperature: {temperature_text}\n"
+        f"Weather: {weather_description}\n"
+        f"Humidity: {humidity_text}\n"
+        f"Wind Speed: {wind_text}\n"
+        f"Cloud Cover: {cloud_text}\n"
+        f"Stargazing: Best after sunset ({sunset_time})\n"
         f"Current weather assessment: {stargazing_conditions}"
     )
 
@@ -305,8 +307,11 @@ def get_iss_location(api_key, token, room_id, parent_id):
     )
 
     return (
-        f"Latitude: {lat}, Longitude: {lon}, Place: {place}, "
-        f"Reported time: {timestamp}, {weather}"
+        f"Latitude: {lat}\n"
+        f"Longitude: {lon}\n"
+        f"Place: {place}\n"
+        f"Reported time: {timestamp}\n\n"
+        f"{weather}"
     )
 # =========================
 # Dictionary FUNCTIONS
