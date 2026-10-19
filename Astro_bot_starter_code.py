@@ -10,7 +10,7 @@
 
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 import os # import os module to access environment variables
 from dotenv import load_dotenv, dotenv_values 
@@ -106,7 +106,7 @@ def select_room(rooms):
 
 def get_latest_message(token, room_id):
     url = "https://webexapis.com/v1/messages"
-    params = {"roomId":{room_id}, "max": 100, "mentionedPeople": "me"} # add  "mentionedPeople": "me" to get spaces recieving to work but cannot send
+    params = {"roomId": room_id, "max": 100, "mentionedPeople": "me"} # add  "mentionedPeople": "me" to get spaces recieving to work but cannot send
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/json"
@@ -152,7 +152,7 @@ def send_message(token, room_id, message, parent_id):
 # =========================
 def get_city_coordinates(city, api_key, token, room_id, parent_id):
     url = "http://api.openweathermap.org/geo/1.0/direct"
-    params = {"q":{city}, "appid": api_key} 
+    params = {"q": city, "appid": api_key} 
     response = requests.request('GET', url, params=params)
 
 
@@ -164,35 +164,16 @@ def get_city_coordinates(city, api_key, token, room_id, parent_id):
     return data[0] if data else None
 
 
-def get_weather(city, api_key, token, room_id, parent_id):
-    location = get_city_coordinates(city, api_key, token, room_id, parent_id)
-
-    if not location:
-        return "Location was not found"
-    first_lat = location['lat']
-    first_lon = location['lon']
-    url = "http://api.openweathermap.org/data/2.5/weather"
-    params = {"lat": first_lat, "lon": first_lon, "appid": api_key}
-
-    response = requests.get(url, params=params)
-
-    if response.status_code not in [200, 201, 204]:
-        handle_api_error("Weather_api", response, city, token, room_id, parent_id, function_name="get_weather")
-        return "Error fetching weather data"
-
-    weather = response.json()
-
-    return (
-        f"City: {weather['name']}, Country: {weather['sys']['country']}, "
-        f"Temperature: {weather['main']['temp']}K, "
-        f"Weather: {weather['weather'][0]['description']}, "
-        f"Humidity: {weather['main']['humidity']}%, "
-        f"Wind Speed: {weather['wind']['speed']} m/s"
-    )
-
 # =========================
 # ISS FUNCTIONS
 # =========================
+def epoch_to_human_time(timestamp):
+    """Convert an epoch timestamp to a readable UTC date and time."""
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime(
+        "%Y-%m-%d %H:%M:%S UTC"
+    )
+
+
 def reverse_geocode(lat, lon, api_key, token, room_id, parent_id):
     url = "http://api.openweathermap.org/geo/1.0/reverse"
     params = {
@@ -212,6 +193,88 @@ def reverse_geocode(lat, lon, api_key, token, room_id, parent_id):
     return data[0] if data else None
 
 
+def get_weather_coordinates(lat, lon, api_key, token, room_id, parent_id):
+    """Return current OpenWeather data for a latitude and longitude."""
+    url = "https://api.openweathermap.org/data/2.5/weather"
+    params = {
+        "lat": lat,
+        "lon": lon,
+        "units": "metric",
+        "appid": api_key,
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code not in [200, 201, 204]:
+        handle_api_error(
+            "Weather_api",
+            response,
+            (lat, lon),
+            token,
+            room_id,
+            parent_id,
+            function_name="get_weather_coordinates",
+        )
+        return None
+
+    return response.json()
+
+
+def format_weather_report(weather, location_name=None):
+    """Format current conditions and a basic stargazing assessment."""
+    weather_entries = weather.get("weather") or [{}]
+    weather_description = weather_entries[0].get("description", "Unknown")
+    weather_main = weather.get("main", {})
+    wind = weather.get("wind", {})
+    clouds = weather.get("clouds", {})
+    system = weather.get("sys", {})
+
+    city = location_name or weather.get("name", "Unknown")
+    country = system.get("country", "Unknown")
+    temperature = weather_main.get("temp")
+    humidity = weather_main.get("humidity")
+    wind_speed = wind.get("speed")
+    cloud_cover = clouds.get("all")
+    sunset_timestamp = system.get("sunset")
+    timezone_offset = weather.get("timezone")
+
+    if sunset_timestamp is None:
+        sunset_time = "time unavailable"
+    elif timezone_offset is None:
+        sunset_time = datetime.fromtimestamp(
+            sunset_timestamp, tz=timezone.utc
+        ).strftime("%H:%M UTC")
+    else:
+        sunset_time = datetime.fromtimestamp(
+            sunset_timestamp + timezone_offset, tz=timezone.utc
+        ).strftime("%H:%M local time")
+
+    if cloud_cover is None:
+        stargazing_conditions = "Unknown (cloud data unavailable)"
+    elif wind_speed is None:
+        stargazing_conditions = "Unable to assess fully (wind data unavailable)"
+    elif cloud_cover < 20 and wind_speed < 8:
+        stargazing_conditions = "Favourable"
+    elif cloud_cover <= 50 and wind_speed < 12:
+        stargazing_conditions = "Mediocre"
+    else:
+        stargazing_conditions = "Poor"
+
+    temperature_text = f"{temperature}°C" if temperature is not None else "Unknown"
+    humidity_text = f"{humidity}%" if humidity is not None else "Unknown"
+    wind_text = f"{wind_speed} m/s" if wind_speed is not None else "Unknown"
+    cloud_text = f"{cloud_cover}%" if cloud_cover is not None else "Unknown"
+
+    return (
+        f"City: {city}, Country: {country}, "
+        f"Temperature: {temperature_text}, Weather: {weather_description}, "
+        f"Humidity: {humidity_text}, Wind Speed: {wind_text}, "
+        f"Cloud Cover: {cloud_text}, "
+        f"Stargazing: Best after sunset ({sunset_time}). "
+        f"Current weather assessment: {stargazing_conditions}"
+    )
+
+
 def get_iss_location(api_key, token, room_id, parent_id):
     url = "http://api.open-notify.org/iss-now.json"
 
@@ -225,16 +288,25 @@ def get_iss_location(api_key, token, room_id, parent_id):
 
     lat = data['iss_position']['latitude']
     lon = data['iss_position']['longitude']
-
+    timestamp = epoch_to_human_time(data["timestamp"])
     location = reverse_geocode(lat, lon, api_key, token, room_id, parent_id)
-
     place = "Over Ocean / No Nearby City"
 
     if location:
         place = location.get("name", "Over Ocean / No Nearby City")
 
+    weather_data = get_weather_coordinates(
+        lat, lon, api_key, token, room_id, parent_id
+    )
+    weather = (
+        format_weather_report(weather_data, location_name=place)
+        if weather_data
+        else "Weather unavailable"
+    )
+
     return (
-        f"Latitude: {lat}, Longitude: {lon}, Place: {place}"
+        f"Latitude: {lat}, Longitude: {lon}, Place: {place}, "
+        f"Reported time: {timestamp}, {weather}"
     )
 # =========================
 # Dictionary FUNCTIONS
@@ -378,7 +450,34 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                     send_message(token, room_id, "Usage: /weather <city>", parent_id=last_message_id)
                 else:
                     city = parts[1]
-                    send_message(token, room_id, get_weather(city, weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
+                    location = get_city_coordinates(
+                        city, weather_key, token, room_id, last_message_id
+                    )
+                    if not location:
+                        weather_reply = "Location was not found"
+                    else:
+                        weather_data = get_weather_coordinates(
+                            location.get("lat"),
+                            location.get("lon"),
+                            weather_key,
+                            token,
+                            room_id,
+                            last_message_id,
+                        )
+                        weather_reply = (
+                            format_weather_report(
+                                weather_data,
+                                location_name=location.get("name", city),
+                            )
+                            if weather_data
+                            else "Error fetching weather data"
+                        )
+                    send_message(
+                        token,
+                        room_id,
+                        weather_reply,
+                        parent_id=last_message_id,
+                    )
                     
             elif message_text.lower() == "/iss":
                 send_message(token, room_id, get_iss_location(weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
