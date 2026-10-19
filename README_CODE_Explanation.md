@@ -4,7 +4,7 @@
 1. [Function Names and Purposes](#1-function-names-and-purposes)
 2. [Development Notes and Review](#2-development-notes-and-review)
 3. [Program Structure and Execution Flow](#3-program-structure-and-execution-flow)
-4. [Testing and Debugging](#4-testing-and-debugging)
+4. [Testing and Development](#4-testing-and-development)
 5. [Limitations and Future Development](#5-limitations-and-future-development)
 
 ## 1. Function Names and Purposes
@@ -759,4 +759,38 @@ The program does not currently implement a dedicated shutdown function or a comp
 It also does not include automatic recovery if the program terminates unexpectedly because of an unhandled exception.
 
 Future improvements could include more advanced exception handling, shutdown logging and automatic restart functionality.
+
+## 4. Testing and Development
+
+Testing and Prototyping the fixes 
+
+### Changes made during development
+
+- **Configuration and Webex:** I moved API keys into environment-based settings with `.env` support. I updated command handling for the required slash commands and Webex group/team rooms. I also added API error logging and handling for Webex rate limits.
+- **Request fixes:** The OpenWeather city lookup now sends the city as a normal string. I corrected the NASA key name so it matched the naming convention used by the rest of the program. The first screenshot shows this key correction.
+- **New commands:** I added `/define` using a dictionary API and `/astronomy` using NASA's Astronomy Picture of the Day API. The astronomy result is sent to Webex as an image URL using their file-url parameter; the second screenshot shows development of that response.
+- **ISS and weather:** `/iss` now converts the ISS timestamp from epoch time, reverse-geocodes its coordinates and requests weather for those same coordinates. `/weather <city>` looks up the city's coordinates, gets current weather for that location and formats the result. Both commands use the coordinate-based weather function. The weather output includes Celsius temperature, cloud cover, wind speed, a basic stargazing assessment and sunset time.
+- **Other development:** I tried a NASA InSight Mars-weather command, but that API has been retired, so it was removed from the current code. I also changed the weather response to use separate lines. Some ISS heading labels have been added, but in the current code they need newline characters so they do not run into the text that follows.
+
+### Screenshots and testing notes
+
+The NASA key screenshot records a mismatch found while configuring the API key. I changed the key name so the code could look it up consistently.
+
+![NASA API key correction](<Development Issues and Notes/Screenshot 2026-10-16 223918.png>)
+
+The astronomy screenshot shows the APOD result being sent through the Webex file-message function.
+
+![Astronomy command development](<Development Issues and Notes/Screenshot 2026-10-17 110133.png>)
+
+The weather screenshot is an earlier test. It shows that the report could not assess stargazing when wind-gust data was unavailable. I changed the assessment to use cloud cover and wind speed instead, so it no longer depends on a gust value. If cloud cover or wind speed is missing, the assessment can still be unavailable.
+
+![Earlier weather test showing unavailable gust data](<Development Issues and Notes/Screenshot 2026-10-19 122114.png>)
+
+The ISS timestamp conversion, weather lookup at ISS coordinates, shared weather functions, sunset display and output formatting do not have screenshots here. They are described above based on the current code and the development history.
+
+### Requirements still to check
+
+The assignment appendix asks for polling every five seconds, while the current code waits ten seconds. The room list shows room name and ID, but not room type. Some API functions also assume response fields are present, so missing or malformed data is not handled safely in every case.
+
+
 
