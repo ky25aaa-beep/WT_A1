@@ -390,32 +390,6 @@ def astronomy_picture_day(token, room_id, parent_id):
     return title, hdurl
 
 # ========================= #
-# Mars weather logic #
-# ========================= #
-
-def get_mars_weather(api, token, room_id, parent_id ):
-    url = "https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0"
-    params = {
-        "api_key": api,
-        "feedtype": "json",
-        "ver": 1.0
-    }
-    response = requests.get(url, params)
-    if response.status_code not in [200, 201, 204]:
-        handle_api_error(
-            "NASA_MARS_WEATHER_api",
-            response,
-            None,
-            token,
-            room_id,
-            parent_id,  # Fixed: properly passing parent_id
-            function_name="NASA_MARS_WEATHER_api",
-        )
-        return None
-    mars_weather_response = response.json()
-    return mars_weather_response
-
-# ========================= #
 # MAIN BOT LOGIC #
 # ========================= #
 def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
@@ -488,8 +462,6 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                     
             elif message_text.lower() == "/iss":
                 send_message(token, room_id, get_iss_location(weather_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
-            elif message_text.lower() == "/mars_weather":
-                send_message(token, room_id, get_mars_weather(nasa_key, token, room_id, parent_id=last_message_id), parent_id=last_message_id)
                                 
             elif message_text.lower().startswith("/define"):
                 parts = message_text.split(maxsplit=1)
