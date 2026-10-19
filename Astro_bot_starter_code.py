@@ -307,10 +307,12 @@ def get_iss_location(api_key, token, room_id, parent_id):
     )
 
     return (
+        f"ISS Coordinates"
         f"Latitude: {lat}\n"
         f"Longitude: {lon}\n"
         f"Place: {place}\n"
         f"Reported time: {timestamp}\n\n"
+        f"Weather Information -- Stargazing"
         f"{weather}"
     )
 # =========================
