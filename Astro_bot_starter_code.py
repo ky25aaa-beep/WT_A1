@@ -91,7 +91,7 @@ def get_rooms(token):
 
 def print_rooms(rooms):
     for room in rooms:
-        print(f"Room: {room['title']}, ID: {room['id']}")
+        print(f"Room: {room['title']}, ID: {room['id']}, Type: {room['type']}")
 
 
 def select_room(rooms):
