@@ -247,13 +247,20 @@ s
 
 | Criteria | Details |
 |---------|---------|
-| Library used | `_______________________________` |
-| Function used to convert epoch | `_______________________________` |
+| Library used | `datetime` module |
+| Function used to convert epoch | `datetime.fromtimestamp()` |
 | Sample code to convert timestamp |  
-```  
+```python
+from datetime import datetime, timezone
+
+def epoch_to_human_time(timestamp):
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime(
+        "%Y-%m-%d %H:%M:%S UTC"
+    )
+
+print(epoch_to_human_time(1790755940))
 ```
-|
-| Output (human-readable time) | `_______________________________` |
+| Output (human-readable time) | `2026-09-30 08:12:20 UTC` |
 
 ---
 
