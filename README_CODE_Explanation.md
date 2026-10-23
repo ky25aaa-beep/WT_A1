@@ -5,7 +5,6 @@
 2. [Development Notes and Review](#2-development-notes-and-review)
 3. [Program Structure and Execution Flow](#3-program-structure-and-execution-flow)
 4. [Testing and Development](#4-testing-and-development)
-5. [Limitations and Future Development](#5-limitations-and-future-development)
 
 ## 1. Function Names and Purposes
 

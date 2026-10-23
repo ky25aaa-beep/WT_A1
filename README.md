@@ -3,7 +3,6 @@
 **Total Marks: 40**  
 **TASK 1: Collect Required API Documentation**
 
-This investigation sheet helps you gather key technical information from the three APIs required for the Space Bot project: **Webex Messaging API**, **ISS Current Location API**, **Weather API** and a **Geocoding API** , plus the Python time module. Also furhter investigate the application of Web Architecture and MVC design pattern in development of the Bot
 
 ---
 
@@ -179,7 +178,7 @@ response = requests.get(url, headers=headers, params=params)
 
 | Criteria | Details |
 |---------|---------|
-| API Provider (Choose one) | **OpenWeather, OpenWeatherMap (or other – provide details)** |
+| API Provider (Choose one) | Openweathermap |
 | API Base URL | `https://api.openweathermap.org/` |
 | Endpoint for current weather | `https://api.openweathermap.org/data/2.5/weather` |
 | Authentication method | OpenWeather API key passed as the `appid` query parameter |
@@ -326,19 +325,38 @@ In this section, evaluate how web technologies, architecture, and design pattern
 ---
 
 ###  Web Architecture – Client–Server Model (3 marks)
+Astrobot is built in line with the client-server architecture model. The client is the webex application itself that the astronomy club members use to interact with the bot. The Python Astrobot also acts as a http client as it sends request to its API's. While also being the server in the webex-python relationship. 
 
-Explain how the client–server model applies to your AstroBot:
+The main server invvolved is the webex server that the python bot communicates with to handle sending and recieving messages. Other Servers include Nasa's APOD and OpenNotify, and Openweather for Geocoding and Weather Information. 
 
-- Identify the **client** 
-- Identify the **server(s)** 
-- Describe how data flows between:
-  - User, AstroBot and APIs
+Astrobot uses polling to retrieve messages  regularly from the webex server, rather than hosting a web server to recieve them via web request. Instead it sends GET requests to the webex Messaging API and evaluates whether the message contains a command. 
 
-Include a **simple block diagram** to illustrate this interaction.
+**Example data flow:**
+1. The user sends /weather London through the Webex Apllication {client}
+2. Webex Receives and stores the message on its servers {server}
+3. Astrobot sends a GET request to the Webex Messaging API to retrieve messages {client}
+4. Webex Responds with the messaging information {server}
+5. Astrobot Recieves the messages and evaluates the contents {client}
+6. Astrobot identifies the weather command and extracts the location London {server}
+7. Astrobot Sends a request to the geocoding api to convert london to latitude and longitude {client}
+8. The geocoding api converts the values and responds with the information {server}
+9. Astrobot sends those coordinates to the weather API to retrieve the current weather conditions {client}
+10. The Weather API Openweather processes the request and responds {server}
+11. Astrobot recieves the request and formats a response {server}
+12. Astrobot sends a post request to the messaging api containing the response {client}
+13. The Webex Server responds with a 200 and stores the reply {server}
+14. The user is shown the response on the Webex Application {client}
+
+![NASA API key correction](<Development Issues and Notes/Diagram.png>)
 
 ####  Security Considerations: (3 marks )
-- Consider but not limiting to secure handling of API keys and tokens, API rate limiting, and Input validation (e.g., handling user commands safely), include examples from code where necessary to illustrate.
+Most of the external services used by AstroBot support HTTPS, which encrypts the communication between the application and the API server using TLS.
 
+This is particularly important when transmitting authentication credentials or accessing user messages through Webex.HTTPS encrypts traffic with an ssl certificate. 
+
+One current issue is the Open Notify ISS endpoint, is independently run and while it serves iss data it is not a NASA projcet and is only served over HTTP not HTTPS.
+
+Overall, AstroBot addresses some of the main security risks through environment variables and API rate-limit handling. Further improvements could include stricter input validation, request timeouts and more consistent handling of unexpected API responses.
 ---
 
 ###  RESTful API Usage in Your Application (3 marks )
@@ -390,38 +408,44 @@ Checking only for `200` can incorrectly treat another successful status as a fai
 ```python 
 if response.status_code not in [200, 201, 204]:
 ```
-This code is instead prefered and checks whether the request wasn't succesful. 
-#### Security Considerations: (2 marks)
-- Check response status codes, Handling invalid or unexpected API responses, Avoiding excessive API calls
+This code is instead prefered and checks whether the request wasn't succesful. While currently none of the API's use these subcodes, it should be added now to future proof the code for future development. 
 
 ---
 
 ###  MVC Design Pattern in AstroBot (3 Marks)
 
-Explain how the **Model–View–Controller (MVC)** pattern applies to your solution:
-Provide a short example based on your implementation
+
 
 | Component   | Description and Example (Relate to your Bot) |
 |------------|----------------------------------|
-| **Model**  |  |
-| **View**   |  |
-| **Controller** |  |
+| **Model**  | Handles data retrieval, storage, and processing. In my bot, this includes: the API error handler; weather API; nasa APIs ; and environment variable loading. **Example:** When the user sends a /weather <city> message the API retrieving the lat and long of that location, parses JSON, and processing it for the openweather function|
+| **View**   | Responsible for presenting information to the user. In my bot, this includes: the formatting functions that build easy to read webex responses. **Example:** After the model returns weather data the format_weather_report makes the response is visually acceptable. 
+| **Controller** | Handles system functions, In my bot this can be the API key handling, selecting functions/commands and polling functions. **Example:**  After the user sends a message containing /weather <city> the program selects the function get_weather_coordinates|
 
 ---
 
 ### 📝 Reflection and Evaluation ( 8 marks )
 
-Reflect on your AstroBot (400 words):
+The astrobot functionally is good at meeting the Astronomy Club's Needs, for now it can affectively respond to commands, communicate in teams and in direct message spaces, the most beneficial design desision was to use the mentionedPeople parameter in the get_latest_messages functions webex api call, this meant the bot could work ingroups as well as direct messages. The most challenging aspect of integrating APIs especially the nasa API's was finding an api endpoint that had been retrieved or who's documentation had yet to be updated. The biggest security risk were the tokens and api keys, the solution to them being leaked being adding them as environment variables in a .env file. The solution could be improved in the future by better error handling and a more robust webex api, as some 429 errors are recieved after approximately 1 hour of activity, the imporvement would be polling for messages more frequently during active periods and less frequently in inactive periods. 
 
-- How effective is your bot in meeting the Astronomy Club’s needs?  
-- What design decisions worked well?  
-- What challenges did you face when integrating APIs?  
-- What security risks did you identify and how were they handled?  
-- How could your solution be improved in the future?  
+```pseudocode
+
+IF latest_message == "":
+    unsuccessful_polls += 1
+    IF unsuccessful_polls > 10
+        poll_delay += 10 
+    ELSE IF unsuccessful_polls >5:
+        poll_delay += 5
+    ELSE: 
+        poll_delay +=1
+
+ELSE:
+    unsuccessful_polls = 0
+    poll_delay = 0
+```
 
 ---
 
- **Tip:** Link your answers directly to your code and examples for higher marks.
 ### Notes
 
 - Use official documentation for accuracy (e.g. developer.webex.com, locationiq.com or Mapbox, open-notify.org or other ISS API).
