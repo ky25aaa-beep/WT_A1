@@ -356,7 +356,10 @@ This is particularly important when transmitting authentication credentials or a
 
 One current issue is the Open Notify ISS endpoint, is independently run and while it serves iss data it is not a NASA projcet and is only served over HTTP not HTTPS.
 
-Overall, AstroBot addresses some of the main security risks through environment variables and API rate-limit handling. Further improvements could include stricter input validation, request timeouts and more consistent handling of unexpected API responses.
+One of the main security risks in AstroBot is the storage of API keys and authentication tokens. The bot requires a Webex Bearer token and an OpenWeather API key to access their respective services. If these credentials were written directly into the Python code, they could accidentally be exposed when uploading the project to GitHub.
+
+To reduce this risk, I have stored the credentials in a .env file and used environment variables to access them from the Python application. This also means that the credentials can be changed without editing the source code.
+
 ---
 
 ###  RESTful API Usage in Your Application (3 marks )
@@ -412,6 +415,25 @@ This code is instead prefered and checks whether the request wasn't succesful. W
 
 ---
 
+#### How Rate Limiting is handeld
+
+During development, I encountered HTTP 429 Too Many Requests responses from the Webex API, particularly after the bot had been running for extended periods.
+
+To handle this, I added error handling that checks whether the response status code is 429. When this occurs, the program reads the Retry-After value from the HTTP response headers and pauses using time.sleep(retry_after).
+
+If the server does not provide this header, the program defaults to waiting 60 seconds.
+
+This is demonstrated in my existing code:
+
+```python
+if response.status_code == 429:
+    global retry_after
+    retry_after = int(response.headers.get("Retry-After", 60))
+    print(f"Rate limit exceeded. Retrying after {retry_after} seconds.")
+    time.sleep(retry_after)
+```
+
+This reduces the number of requests sent while the application is being rate limited. However, it does not prevent rate limiting from occurring in the first place. A future improvement would be adaptive polling, allowing AstroBot to make fewer requests during inactive periods.
 ###  MVC Design Pattern in AstroBot (3 Marks)
 
 
@@ -426,24 +448,51 @@ This code is instead prefered and checks whether the request wasn't succesful. W
 
 ### 📝 Reflection and Evaluation ( 8 marks )
 
-The astrobot functionally is good at meeting the Astronomy Club's Needs, for now it can affectively respond to commands, communicate in teams and in direct message spaces, the most beneficial design desision was to use the mentionedPeople parameter in the get_latest_messages functions webex api call, this meant the bot could work ingroups as well as direct messages. The most challenging aspect of integrating APIs especially the nasa API's was finding an api endpoint that had been retrieved or who's documentation had yet to be updated. The biggest security risk were the tokens and api keys, the solution to them being leaked being adding them as environment variables in a .env file. The solution could be improved in the future by better error handling and a more robust webex api, as some 429 errors are recieved after approximately 1 hour of activity, the imporvement would be polling for messages more frequently during active periods and less frequently in inactive periods. 
+The astrobot functionally is good at meeting the Astronomy Club's Needs, for now it can affectively respond to commands, communicate in teams and in direct message spaces. 
 
-```pseudocode
+**/iss**
+The slash iss comand outputs the International Space Stations Location over earth, its weather and stargazing conditions so members can see if they can spot the iss tonight.
 
-IF latest_message == "":
+**/astronomy** 
+
+The slash astronomy command provides the club with the astronomy picture of the day, a helpful branching point in their group and a nice way of sharing nasa's ever growing archive of all things space. 
+
+**/weather**
+
+The slash weather command provides the club with essential weather and stargazing information so the club can decide weather or not to meet for stargazing that night. 
+
+The most beneficial design desision was to use the mentionedPeople parameter in the get_latest_messages functions webex api call, this meant the bot could work ingroups as well as direct messages. 
+
+The most challenging aspect of integrating APIs especially the nasa API's was finding an api endpoint that had been retrieved or who's documentation had yet to be updated. The biggest security risk were the tokens and api keys, the solution to them being leaked being adding them as environment variables in a .env file. 
+
+The solution could be improved in the future by better error handling and a more robust webex api, as some 429 errors are recieved after approximately 1 hour of activity, the imporvement would be polling for messages more frequently during active periods and less frequently in inactive periods. 
+
+# Adaptive polling based on message activity
+```python
+MIN_POLL_DELAY = 5
+MAX_POLL_DELAY = 60
+
+if latest_message == "":
     unsuccessful_polls += 1
-    IF unsuccessful_polls > 10
-        poll_delay += 10 
-    ELSE IF unsuccessful_polls >5:
+
+    if unsuccessful_polls > 10:
+        poll_delay += 10
+    elif unsuccessful_polls > 5:
         poll_delay += 5
-    ELSE: 
-        poll_delay +=1
+    else:
+        poll_delay += 1
 
-ELSE:
+    # Prevent the polling interval growing indefinitely
+    poll_delay = min(poll_delay, MAX_POLL_DELAY)
+
+else:
+    # Reset polling when activity is detected
     unsuccessful_polls = 0
-    poll_delay = 0
-```
+    poll_delay = MIN_POLL_DELAY
 
+# Ensure polling never exceeds the permitted limits
+poll_delay = max(MIN_POLL_DELAY, poll_delay)
+```
 ---
 
 ### Notes
