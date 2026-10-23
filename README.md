@@ -360,6 +360,36 @@ One of the main security risks in AstroBot is the storage of API keys and authen
 
 To reduce this risk, I have stored the credentials in a .env file and used environment variables to access them from the Python application. This also means that the credentials can be changed without editing the source code.
 
+#### Input Validation and Invalid Input Handling
+
+Astrobot Recieves commands through Webex, with no way to validate inputs on the client, meaning users can message incorrectly or provide information in a format the APIs cannot recognise or use.
+
+To handle this issue, I have added an input validator to the required portions of the command handling section of the Python Application. For example, both /weather and /define require an additional argument. If a user enters either command without providing the required information, AstroBot responds with a usage direction message as opposed to running the api request. 
+
+For example, If a user enters /weather without a city, the bot responds with Usage: /weather <city> 
+
+
+**Example Code:**
+
+```python
+parts = message_text.split(maxsplit=1)
+
+if len(parts) < 2:
+    send_message(
+        token,
+        room_id,
+        "Usage: /weather <city>",
+        parent_id=last_message_id
+    )
+```
+
+The application also checks whether the geocoding API identifies the requested location. If the API returns no matching location, AstroBot sends Location was not found instead of attempting to retrieve weather information using invalid coordinates.
+
+Unexpected commands are handled separately. If a message begins with / but does not match any supported command, AstroBot responds with Unknown command. Use /help. Ordinary messages that do not begin with / are ignored.
+
+These checks improve the reliability of AstroBot by preventing some incorrectly formatted commands from generating unnecessary API requests and by providing users with human interpretable feedback when their commands cannot be processed.
+
+However, the current validation is  basic. Future improvements should include more thorough checks on user input and more consistent handling of malformed JSON from APIs.
 ---
 
 ###  RESTful API Usage in Your Application (3 marks )
@@ -465,9 +495,11 @@ The most beneficial design desision was to use the mentionedPeople parameter in 
 
 The most challenging aspect of integrating APIs especially the nasa API's was finding an api endpoint that had been retrieved or who's documentation had yet to be updated. The biggest security risk were the tokens and api keys, the solution to them being leaked being adding them as environment variables in a .env file. 
 
+
+#### Future Development 
 The solution could be improved in the future by better error handling and a more robust webex api, as some 429 errors are recieved after approximately 1 hour of activity, the imporvement would be polling for messages more frequently during active periods and less frequently in inactive periods. 
 
-# Adaptive polling based on message activity
+
 ```python
 MIN_POLL_DELAY = 5
 MAX_POLL_DELAY = 60
@@ -493,12 +525,12 @@ else:
 # Ensure polling never exceeds the permitted limits
 poll_delay = max(MIN_POLL_DELAY, poll_delay)
 ```
----
 
-### Notes
+One of the other challenges it could face is the overreliance on external APIs especially the ISS location. Some of the endpoints I investigated no longer existed or had documentation that had not been updated to reflect changes to the service. 
 
-- Use official documentation for accuracy (e.g. developer.webex.com, locationiq.com or Mapbox, open-notify.org or other ISS API).
-- Be prepared to explain your findings to your instructor or demo how you retrieved them using tools like Postman, Curl, or Python scripts.
+This highlighted a major limitation of AstroBot, as the application relies on third-party services that are outside my control. Even if the Python code is functioning correctly, an API becoming unavailable, changing its response format or returning an error could prevent certain commands from working. 
+
+In my future development, I would update the usage of APIs to have alternative sources that are not dependent on each other. Thus ensuring less outtime due to changes in avialability or information. 
 
 ---
 
