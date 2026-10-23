@@ -7,7 +7,6 @@
 # =========================
 # REQUIRED LIBRARIES
 # =========================
-
 import requests
 import json
 from datetime import datetime, timezone
@@ -15,8 +14,9 @@ import time
 import os # import os module to access environment variables
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
-
-global use_hardcoded_key
+ 
+global use_hardcoded_key, retry_after
+retry_after = 5
 use_hardcoded_key = False # Default to use False (During Testing True)
 api_keys_used = ("weather_api", "webex_api", "NASA_api", "Geocoding_api")
 api_keys_hardcoded = {
@@ -25,6 +25,7 @@ api_keys_hardcoded = {
     "NASA_api": "provide_key",
     "Geocoding_api": "provide_key",
 }
+
 # =========================
 # CONFIGURATION FUNCTIONS
 # =========================
@@ -307,12 +308,12 @@ def get_iss_location(api_key, token, room_id, parent_id):
     )
 
     return (
-        f"ISS Coordinates"
+        f"ISS Coordinates\n"
         f"Latitude: {lat}\n"
         f"Longitude: {lon}\n"
         f"Place: {place}\n"
         f"Reported time: {timestamp}\n\n"
-        f"Weather Information -- Stargazing"
+        f"Weather Information -- Stargazing\n"
         f"{weather}"
     )
 # =========================
@@ -480,11 +481,7 @@ def main(api_keys_used, use_hardcoded_key, api_keys_hardcoded):
                 send_message_file(token, room_id, message, file_url, parent_id=last_message_id)
             else:
                 send_message(token, room_id, "Unknown command. Use /help", parent_id=last_message_id)
-        if 'retry_after' in globals():
-            time.sleep(retry_after)
-        else:
-            time.sleep(10)
-
+        time.sleep(retry_after)
 
 
 
